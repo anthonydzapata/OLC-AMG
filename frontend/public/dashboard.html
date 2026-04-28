@@ -592,6 +592,160 @@
     to { transform: translateX(-100%); }
   }
 
+  /* INSPO ANALYZER */
+  .drop-zone {
+    border: 2px dashed var(--gold-dim);
+    background: var(--card);
+    padding: 40px 24px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+  }
+  .drop-zone:hover, .drop-zone.dragover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+  .drop-zone-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+    margin-bottom: 8px;
+  }
+  .drop-zone-sub {
+    font-size: 11px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+  }
+  .drop-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+  .image-preview {
+    max-width: 280px;
+    max-height: 280px;
+    border: 1px solid var(--border);
+    margin: 16px auto 0;
+    display: block;
+  }
+
+  .breakdown-block {
+    border: 1px solid var(--border);
+    background: var(--card);
+    padding: 18px 20px;
+    margin-bottom: 16px;
+  }
+  .breakdown-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.18em;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px;
+  }
+  .breakdown-observed {
+    font-size: 12px;
+    color: var(--cream);
+    line-height: 1.6;
+    margin-bottom: 14px;
+    font-style: italic;
+    opacity: 0.85;
+  }
+  .breakdown-philosophy {
+    font-size: 11px;
+    color: var(--gold-dim);
+    line-height: 1.55;
+    margin-bottom: 14px;
+    padding: 8px 12px;
+    border-left: 2px solid var(--gold-dim);
+  }
+  .choice-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .choice-row:hover { background: rgba(201,168,76,0.04); }
+  .choice-row input[type=radio] {
+    margin-top: 4px;
+    accent-color: var(--gold);
+  }
+  .choice-row.selected { background: rgba(201,168,76,0.08); }
+  .choice-text {
+    font-size: 12px;
+    color: var(--offwhite);
+    line-height: 1.55;
+    flex: 1;
+  }
+  .choice-tag {
+    display: inline-block;
+    font-size: 9px;
+    color: var(--gold-dim);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    margin-right: 6px;
+  }
+  .breakdown-custom {
+    width: 100%;
+    margin-top: 8px;
+    background: var(--black);
+    color: var(--offwhite);
+    border: 1px solid var(--border);
+    padding: 8px 10px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    min-height: 50px;
+    resize: vertical;
+  }
+  .breakdown-custom:focus {
+    border-color: var(--gold-dim);
+    outline: none;
+  }
+
+  .prompt-output {
+    background: var(--black);
+    border: 1px solid var(--gold-dim);
+    color: var(--cream);
+    padding: 20px;
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    line-height: 1.65;
+    white-space: pre-wrap;
+    margin-top: 16px;
+    max-height: 500px;
+    overflow-y: auto;
+  }
+
+  .toolbar-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 16px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    padding: 10px 18px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 0.15em;
+    font-size: 13px;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
   /* RESPONSIVE */
   @media (max-width: 768px) {
     main { padding: 16px; }
@@ -615,6 +769,7 @@
   <div class="logo">OLC <span>The Old Line Company</span></div>
   <nav>
     <button class="active" onclick="showPanel('pipeline')">Pipeline</button>
+    <button onclick="showPanel('analyzer')">Analyzer</button>
     <button onclick="showPanel('brief')">Brief Builder</button>
     <button onclick="showPanel('inspo')">Inspo Log</button>
     <button onclick="showPanel('thread')">The Thread</button>
@@ -885,7 +1040,74 @@
     <div id="thread-log"></div>
   </div>
 
+  <!-- INSPO ANALYZER PANEL -->
+  <div id="panel-analyzer" class="panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Inspo Analyzer</div>
+        <div class="section-sub">Drop an image → break it down → make choices → generate a directive</div>
+      </div>
+      <button class="btn btn-sm" onclick="resetAnalyzer()" data-testid="analyzer-reset-btn">Reset</button>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-group">
+        <label>Project Title</label>
+        <input type="text" id="az-title" placeholder="e.g. Angel Fist — Capcom Kickers" data-testid="analyzer-title-input">
+      </div>
+
+      <div class="drop-zone" id="az-dropzone" data-testid="analyzer-dropzone">
+        <div class="drop-zone-label" id="az-dz-label">Drop reference image here</div>
+        <div class="drop-zone-sub">or tap to choose · JPG / PNG / WEBP · auto-resized</div>
+        <input type="file" id="az-file" accept="image/jpeg,image/png,image/webp" data-testid="analyzer-file-input">
+      </div>
+      <img id="az-preview" class="image-preview" style="display:none;" alt="reference preview">
+
+      <div class="form-group" style="margin-top:16px;">
+        <label>Creator notes (bias the analysis — optional)</label>
+        <textarea id="az-bias" placeholder="e.g. read this as Roger Corman one-sheets meets shogi diagrams" style="min-height:60px;" data-testid="analyzer-bias-input"></textarea>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn btn-primary" id="az-analyze-btn" onclick="runImageAnalysis()" data-testid="analyzer-analyze-btn">✦ Analyze Image</button>
+        <span id="az-status" style="font-size:11px;color:var(--muted);margin-left:12px;letter-spacing:0.15em;"></span>
+      </div>
+    </div>
+
+    <div id="az-breakdown" style="display:none;">
+      <div class="section-header" style="margin-top:24px;">
+        <div>
+          <div class="section-title" style="font-size:18px;">Breakdown & Direction</div>
+          <div class="section-sub">Pick a direction for each — or write your own</div>
+        </div>
+      </div>
+      <div id="az-breakdown-blocks"></div>
+
+      <div class="form-panel" style="margin-top:20px;">
+        <div class="form-group">
+          <label>Work Product Notes — choices, why, what's deferred</label>
+          <textarea id="az-notes" placeholder="Notes auto-save. Capture the why behind each choice." style="min-height:100px;" data-testid="analyzer-notes-input"></textarea>
+        </div>
+
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="generateDirective()" data-testid="analyzer-generate-btn">Generate Brief Prompt</button>
+          <button class="btn btn-sm" onclick="sendAnalyzerToBrief()" data-testid="analyzer-send-to-brief-btn">→ Send to Brief Builder</button>
+        </div>
+
+        <div id="az-prompt-output" class="prompt-output" style="display:none;"></div>
+
+        <div class="toolbar-row" id="az-export-row" style="display:none;">
+          <button class="btn" onclick="downloadDocx()" data-testid="analyzer-download-docx-btn">⬇ Download .docx</button>
+          <button class="btn btn-sm" onclick="copyFormatted()" data-testid="analyzer-copy-btn">Copy Formatted Text</button>
+          <button class="btn btn-sm" onclick="saveToInspoLog()" data-testid="analyzer-save-inspo-btn">+ Save to Inspo Log</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
 </main>
+
+<div class="toast" id="toast" data-testid="toast"></div>
 
 <!-- ASSET DETAIL MODAL -->
 <div class="modal-overlay" id="asset-modal">
@@ -901,8 +1123,11 @@
 const STORAGE_KEYS = {
   assets: 'olc_assets',
   inspo: 'olc_inspo',
-  thread: 'olc_thread'
+  thread: 'olc_thread',
+  analyzer: 'olc_analyzer'
 };
+
+const API_BASE = 'https://ops-hub-64.preview.emergentagent.com/api';
 
 function load(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; }
@@ -1040,11 +1265,12 @@ function showPanel(name) {
   document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
   const btns = document.querySelectorAll('nav button');
-  const labels = { pipeline: 0, brief: 1, inspo: 2, thread: 3 };
+  const labels = { pipeline: 0, analyzer: 1, brief: 2, inspo: 3, thread: 4 };
   btns[labels[name]].classList.add('active');
   if (name === 'pipeline') renderPipeline();
   if (name === 'inspo') renderInspo();
   if (name === 'thread') renderThread();
+  if (name === 'analyzer') initAnalyzer();
 }
 
 // ─── BRIEF BUILDER ────────────────────────────────────────────────────────────
@@ -1438,6 +1664,400 @@ function deleteThread(id) {
   data = data.filter(x => x.id !== id);
   save(STORAGE_KEYS.thread, data);
   renderThread();
+}
+
+// ─── INSPO ANALYZER ───────────────────────────────────────────────────────────
+
+const AZ_FIELDS = [
+  { key: 'subject',           label: 'Subject',                       hint: 'What is being depicted' },
+  { key: 'method',            label: 'Method',                        hint: 'Technique / medium' },
+  { key: 'composition',       label: 'Composition',                   hint: 'Layout, focal points, framing' },
+  { key: 'designer',          label: 'Design Lineage / Philosophy',   hint: 'Designer or firm + their philosophy' },
+  { key: 'method_to_achieve', label: 'Method to Achieve the Look',    hint: 'How to recreate it — concrete steps' },
+  { key: 'technical_specs',   label: 'Technical Specs / Settings',    hint: 'Camera, software, equipment, settings' }
+];
+
+let _azState = null;
+
+function _azLoad() {
+  if (_azState) return _azState;
+  _azState = load(STORAGE_KEYS.analyzer);
+  if (!Array.isArray(_azState)) _azState = (_azState && typeof _azState === 'object') ? _azState : null;
+  if (!_azState || Array.isArray(_azState)) {
+    _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '' };
+  }
+  return _azState;
+}
+
+function _azSave() {
+  localStorage.setItem(STORAGE_KEYS.analyzer, JSON.stringify(_azState));
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 1800);
+}
+
+function initAnalyzer() {
+  const s = _azLoad();
+  document.getElementById('az-title').value = s.title || '';
+  document.getElementById('az-bias').value = s.bias || '';
+  document.getElementById('az-notes').value = s.notes || '';
+  if (s.image_b64) {
+    const img = document.getElementById('az-preview');
+    img.src = 'data:' + (s.mime || 'image/jpeg') + ';base64,' + s.image_b64;
+    img.style.display = 'block';
+    document.getElementById('az-dz-label').textContent = 'Image loaded — drop another to replace';
+  }
+  if (s.parsed) {
+    renderBreakdown(s.parsed);
+    document.getElementById('az-breakdown').style.display = 'block';
+  }
+  if (s.generated) {
+    const out = document.getElementById('az-prompt-output');
+    out.textContent = s.generated;
+    out.style.display = 'block';
+    document.getElementById('az-export-row').style.display = 'flex';
+  }
+  bindAnalyzerInputs();
+  bindDropZone();
+}
+
+function bindAnalyzerInputs() {
+  const tEl = document.getElementById('az-title');
+  const bEl = document.getElementById('az-bias');
+  const nEl = document.getElementById('az-notes');
+  if (tEl._bound) return;
+  tEl._bound = bEl._bound = nEl._bound = true;
+  tEl.addEventListener('input', () => { _azState.title = tEl.value; _azSave(); });
+  bEl.addEventListener('input', () => { _azState.bias = bEl.value; _azSave(); });
+  nEl.addEventListener('input', () => { _azState.notes = nEl.value; _azSave(); });
+}
+
+function bindDropZone() {
+  const dz = document.getElementById('az-dropzone');
+  const input = document.getElementById('az-file');
+  if (dz._bound) return;
+  dz._bound = true;
+
+  ['dragenter', 'dragover'].forEach(ev => {
+    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); });
+  });
+  dz.addEventListener('drop', (e) => {
+    const file = e.dataTransfer?.files?.[0];
+    if (file) handleImageFile(file);
+  });
+  input.addEventListener('change', (e) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageFile(file);
+  });
+}
+
+function handleImageFile(file) {
+  if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+    alert('Use JPG, PNG, or WEBP images only.');
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    resizeToBase64(e.target.result, 1280, 0.85).then(({ b64, mime }) => {
+      _azState.image_b64 = b64;
+      _azState.mime = mime;
+      _azSave();
+      const img = document.getElementById('az-preview');
+      img.src = 'data:' + mime + ';base64,' + b64;
+      img.style.display = 'block';
+      document.getElementById('az-dz-label').textContent = 'Image loaded — drop another to replace';
+      toast('Image ready');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function resizeToBase64(dataUrl, maxDim, quality) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let w = img.width, h = img.height;
+      if (w > maxDim || h > maxDim) {
+        const r = Math.min(maxDim / w, maxDim / h);
+        w = Math.round(w * r); h = Math.round(h * r);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, w, h);
+      const out = canvas.toDataURL('image/jpeg', quality);
+      const b64 = out.split(',')[1];
+      resolve({ b64, mime: 'image/jpeg' });
+    };
+    img.src = dataUrl;
+  });
+}
+
+async function runImageAnalysis() {
+  const s = _azLoad();
+  if (!s.image_b64) { alert('Drop an image first.'); return; }
+  const btn = document.getElementById('az-analyze-btn');
+  const status = document.getElementById('az-status');
+  btn.disabled = true; btn.textContent = '... analyzing';
+  status.textContent = 'GEMINI READING THE FRAME —';
+  try {
+    const res = await fetch(API_BASE + '/analyze-image', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image_base64: s.image_b64, mime_type: s.mime, notes: s.bias || '' })
+    });
+    if (!res.ok) {
+      const t = await res.text();
+      throw new Error(`Server ${res.status}: ${t.slice(0, 200)}`);
+    }
+    const data = await res.json();
+    if (!data.parsed) {
+      status.innerHTML = '<span style="color:var(--red);">Could not parse model output. Raw response logged to console.</span>';
+      console.warn('Raw analyzer response:', data.raw);
+      return;
+    }
+    _azState.parsed = data.parsed;
+    _azState.choices = {};
+    _azState.customs = {};
+    _azSave();
+    renderBreakdown(data.parsed);
+    document.getElementById('az-breakdown').style.display = 'block';
+    status.textContent = 'BREAKDOWN READY — pick directions below';
+    document.getElementById('az-breakdown').scrollIntoView({ behavior: 'smooth' });
+  } catch (err) {
+    status.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}</span>`;
+  } finally {
+    btn.disabled = false; btn.textContent = '✦ Analyze Image';
+  }
+}
+
+function _esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+function renderBreakdown(parsed) {
+  const container = document.getElementById('az-breakdown-blocks');
+  container.innerHTML = AZ_FIELDS.map(f => {
+    const node = parsed[f.key] || {};
+    const observed = node.observed || '';
+    const philosophy = node.philosophy || '';
+    const opts = Array.isArray(node.options) ? node.options : [];
+    const selected = _azState.choices[f.key] ?? 'observed';
+    const custom = _azState.customs[f.key] || '';
+
+    const choices = [
+      { id: 'observed', label: 'KEEP OBSERVED', text: observed || '(no description)' },
+      ...opts.map((o, i) => ({ id: 'opt'+i, label: 'OPTION ' + String.fromCharCode(65+i), text: o }))
+    ];
+
+    const choiceHtml = choices.map(c => `
+      <label class="choice-row ${selected === c.id ? 'selected' : ''}" data-testid="analyzer-choice-${f.key}-${c.id}">
+        <input type="radio" name="az-${f.key}" value="${c.id}" ${selected === c.id ? 'checked' : ''} onchange="selectChoice('${f.key}','${c.id}')">
+        <div class="choice-text"><span class="choice-tag">${c.label}</span>${_esc(c.text)}</div>
+      </label>
+    `).join('');
+
+    const customSelected = selected === 'custom';
+    const customHtml = `
+      <label class="choice-row ${customSelected ? 'selected' : ''}">
+        <input type="radio" name="az-${f.key}" value="custom" ${customSelected ? 'checked' : ''} onchange="selectChoice('${f.key}','custom')">
+        <div class="choice-text" style="width:100%;">
+          <span class="choice-tag">WRITE YOUR OWN</span>
+          <textarea class="breakdown-custom" placeholder="Your direction for ${f.label.toLowerCase()}..." oninput="updateCustom('${f.key}', this.value)" data-testid="analyzer-custom-${f.key}">${_esc(custom)}</textarea>
+        </div>
+      </label>
+    `;
+
+    const philosophyBlock = philosophy
+      ? `<div class="breakdown-philosophy">${_esc(philosophy)}</div>`
+      : '';
+
+    return `
+      <div class="breakdown-block" data-testid="analyzer-block-${f.key}">
+        <div class="breakdown-label">${f.label}</div>
+        <div class="breakdown-observed">${_esc(observed) || '<em>no description returned</em>'}</div>
+        ${philosophyBlock}
+        ${choiceHtml}
+        ${customHtml}
+      </div>
+    `;
+  }).join('');
+}
+
+function selectChoice(fieldKey, choiceId) {
+  _azState.choices[fieldKey] = choiceId;
+  _azSave();
+  document.querySelectorAll(`[data-testid^="analyzer-block-${fieldKey}"] .choice-row`).forEach(r => r.classList.remove('selected'));
+  const radio = document.querySelector(`input[name="az-${fieldKey}"][value="${choiceId}"]`);
+  if (radio) radio.closest('.choice-row').classList.add('selected');
+}
+
+function updateCustom(fieldKey, val) {
+  _azState.customs[fieldKey] = val;
+  _azSave();
+}
+
+function _resolveChoice(f) {
+  const node = (_azState.parsed || {})[f.key] || {};
+  const sel = _azState.choices[f.key] ?? 'observed';
+  if (sel === 'custom') return _azState.customs[f.key] || '';
+  if (sel === 'observed') {
+    const o = node.observed || '';
+    return f.key === 'designer' && node.philosophy ? `${o} — ${node.philosophy}` : o;
+  }
+  const m = sel.match(/^opt(\d+)$/);
+  if (m) return (node.options || [])[Number(m[1])] || '';
+  return '';
+}
+
+async function generateDirective() {
+  const s = _azLoad();
+  if (!s.parsed) { alert('Run image analysis first.'); return; }
+  const body = { title: s.title || '', notes: s.notes || '' };
+  AZ_FIELDS.forEach(f => { body[f.key] = _resolveChoice(f); });
+  try {
+    const res = await fetch(API_BASE + '/generate-prompt', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    const data = await res.json();
+    _azState.generated = data.prompt || '';
+    _azSave();
+    const out = document.getElementById('az-prompt-output');
+    out.textContent = _azState.generated;
+    out.style.display = 'block';
+    document.getElementById('az-export-row').style.display = 'flex';
+    out.scrollIntoView({ behavior: 'smooth' });
+    toast('Prompt generated');
+  } catch (err) {
+    alert('Generate failed: ' + err.message);
+  }
+}
+
+async function downloadDocx() {
+  const s = _azLoad();
+  if (!s.generated && !s.parsed) { alert('Generate the prompt first.'); return; }
+  const breakdown = {};
+  const choices = {};
+  AZ_FIELDS.forEach(f => {
+    const node = (s.parsed || {})[f.key] || {};
+    breakdown[f.key] = node.observed || '';
+    choices[f.key] = _resolveChoice(f);
+  });
+  const body = {
+    title: s.title || 'OLC Inspo Analysis',
+    image_base64: s.image_b64 || null,
+    mime_type: s.mime || 'image/jpeg',
+    breakdown,
+    choices,
+    notes: s.notes || '',
+    generated_prompt: s.generated || ''
+  };
+  try {
+    const res = await fetch(API_BASE + '/export-docx', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) throw new Error('Server ' + res.status);
+    const blob = await res.blob();
+    const cd = res.headers.get('Content-Disposition') || '';
+    const m = cd.match(/filename="([^"]+)"/);
+    const filename = m ? m[1] : 'OLC_Inspo_Analysis.docx';
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+    toast('Downloaded');
+  } catch (err) {
+    alert('Download failed: ' + err.message);
+  }
+}
+
+function copyFormatted() {
+  const s = _azLoad();
+  const lines = [];
+  lines.push(s.title || 'OLC Inspo Analysis');
+  lines.push('The Old Line Company — ' + new Date().toLocaleDateString());
+  lines.push('');
+  lines.push('BREAKDOWN & DIRECTION');
+  lines.push('====================');
+  AZ_FIELDS.forEach(f => {
+    const node = (s.parsed || {})[f.key] || {};
+    lines.push('');
+    lines.push(f.label.toUpperCase());
+    lines.push('Observed: ' + (node.observed || '—'));
+    lines.push('Direction chosen: ' + (_resolveChoice(f) || '—'));
+  });
+  if (s.notes && s.notes.trim()) {
+    lines.push('');
+    lines.push('WORK PRODUCT NOTES');
+    lines.push('==================');
+    lines.push(s.notes.trim());
+  }
+  if (s.generated) {
+    lines.push('');
+    lines.push('BRIEF PROMPT (FOR EXECUTOR)');
+    lines.push('===========================');
+    lines.push(s.generated);
+  }
+  const text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard'));
+}
+
+function saveToInspoLog() {
+  const s = _azLoad();
+  if (!s.parsed) { alert('Nothing analyzed yet.'); return; }
+  const entry = {
+    id: uid(),
+    title: s.title || 'Inspo Analysis',
+    type: 'Analyzed',
+    link: '',
+    notes: AZ_FIELDS.map(f => `${f.label}: ${_resolveChoice(f) || (s.parsed[f.key]?.observed || '')}`).join(' | '),
+    tags: 'analyzer',
+    created: today()
+  };
+  const data = load(STORAGE_KEYS.inspo);
+  data.unshift(entry);
+  save(STORAGE_KEYS.inspo, data);
+  toast('Saved to Inspo Log');
+}
+
+function sendAnalyzerToBrief() {
+  const s = _azLoad();
+  if (!s.parsed) { alert('Nothing analyzed yet.'); return; }
+  showPanel('brief');
+  const setIf = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
+  setIf('b-title', s.title);
+  setIf('b-inspo', _resolveChoice({ key: 'subject' }));
+  setIf('b-ref', _resolveChoice({ key: 'composition' }));
+  setIf('b-tech', [_resolveChoice({ key: 'method_to_achieve' }), _resolveChoice({ key: 'technical_specs' })].filter(Boolean).join('\n\n'));
+  setIf('b-thread', s.notes);
+  toast('Sent to Brief Builder');
+}
+
+function resetAnalyzer() {
+  if (!confirm('Clear the analyzer? Your work product notes will be lost.')) return;
+  _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '' };
+  _azSave();
+  document.getElementById('az-title').value = '';
+  document.getElementById('az-bias').value = '';
+  document.getElementById('az-notes').value = '';
+  document.getElementById('az-preview').style.display = 'none';
+  document.getElementById('az-preview').src = '';
+  document.getElementById('az-dz-label').textContent = 'Drop reference image here';
+  document.getElementById('az-breakdown').style.display = 'none';
+  document.getElementById('az-prompt-output').style.display = 'none';
+  document.getElementById('az-export-row').style.display = 'none';
+  document.getElementById('az-status').textContent = '';
+  toast('Reset');
 }
 
 // ─── CLOSE MODAL ON OVERLAY CLICK ─────────────────────────────────────────────
