@@ -1,0 +1,1453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OLC — The Old Line Company</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0a08;
+    --offwhite: #f0ead8;
+    --cream: #e8dfc8;
+    --gold: #c9a84c;
+    --gold-dim: #7a6228;
+    --red: #c0392b;
+    --green: #2d6a4f;
+    --blue: #1a3a5c;
+    --muted: #4a4840;
+    --border: #2a2820;
+    --card: #111108;
+    --tag-bg: #1e1d15;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--black);
+    color: var(--offwhite);
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* NOISE OVERLAY */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.6;
+  }
+
+  /* HEADER */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: baseline;
+    gap: 24px;
+    position: sticky;
+    top: 0;
+    background: var(--black);
+    z-index: 100;
+  }
+
+  .logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 0.12em;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  .logo span {
+    color: var(--offwhite);
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.25em;
+    margin-left: 12px;
+    opacity: 0.5;
+    vertical-align: middle;
+  }
+
+  nav {
+    display: flex;
+    gap: 0;
+    margin-left: auto;
+  }
+
+  nav button {
+    background: none;
+    border: none;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    padding: 6px 16px;
+    cursor: pointer;
+    text-transform: uppercase;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+
+  nav button.active {
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+  }
+
+  nav button:hover:not(.active) {
+    color: var(--offwhite);
+  }
+
+  /* MAIN */
+  main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* SECTION HEADERS */
+  .section-header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 0.1em;
+    color: var(--gold);
+  }
+
+  .section-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+  }
+
+  /* BUTTONS */
+  .btn {
+    background: none;
+    border: 1px solid var(--gold-dim);
+    color: var(--gold);
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    padding: 8px 18px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: all 0.15s;
+  }
+
+  .btn:hover {
+    background: var(--gold);
+    color: var(--black);
+  }
+
+  .btn-sm {
+    padding: 4px 10px;
+    font-size: 10px;
+  }
+
+  .btn-danger {
+    border-color: #5a1a1a;
+    color: #c06060;
+  }
+
+  .btn-danger:hover {
+    background: var(--red);
+    color: var(--offwhite);
+    border-color: var(--red);
+  }
+
+  /* CARDS */
+  .card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 20px;
+    position: relative;
+    transition: border-color 0.15s;
+  }
+
+  .card:hover {
+    border-color: var(--gold-dim);
+  }
+
+  .card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 16px;
+    color: var(--offwhite);
+    margin-bottom: 8px;
+    line-height: 1.3;
+  }
+
+  .card-meta {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-bottom: 12px;
+    text-transform: uppercase;
+  }
+
+  .card-body {
+    font-size: 12px;
+    color: #8a8470;
+    line-height: 1.6;
+    margin-bottom: 14px;
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* STATUS BADGES */
+  .status {
+    font-size: 9px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .status-idea { color: #6a8faf; border-color: #1a3a5c; background: #0d1e2e; }
+  .status-brief { color: #a08030; border-color: #5a4a18; background: #1e1808; }
+  .status-production { color: #8fbf6a; border-color: #3a5a20; background: #141f0a; }
+  .status-review { color: #af8f6a; border-color: #5a3a18; background: #1e1208; }
+  .status-approved { color: #6aaf8f; border-color: #1a5a3a; background: #081e14; }
+  .status-scheduled { color: #9f6aaf; border-color: #4a1a5a; background: #1a0820; }
+  .status-live { color: #c9a84c; border-color: #7a6228; background: #1e1808; }
+  .status-analytics { color: #af6a6a; border-color: #5a1a1a; background: #200808; }
+
+  /* TAGS */
+  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+
+  .tag {
+    font-size: 9px;
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 2px 7px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .tag-platform { border-color: #1a3a5c; color: #6a8faf; }
+  .tag-format { border-color: #2d3a1a; color: #8a9f6a; }
+
+  /* FORMS */
+  .form-panel {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 28px;
+    margin-bottom: 32px;
+  }
+
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+
+  .form-group {
+    margin-bottom: 16px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 6px;
+  }
+
+  .form-group input,
+  .form-group textarea,
+  .form-group select {
+    width: 100%;
+    background: #0d0d0a;
+    border: 1px solid var(--border);
+    color: var(--offwhite);
+    font-family: 'DM Mono', monospace;
+    font-size: 12px;
+    padding: 10px 12px;
+    outline: none;
+    transition: border-color 0.15s;
+    appearance: none;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus,
+  .form-group select:focus {
+    border-color: var(--gold-dim);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 80px;
+    line-height: 1.6;
+  }
+
+  .form-group select option {
+    background: #0d0d0a;
+  }
+
+  .form-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  /* PIPELINE VIEW */
+  .pipeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    overflow-x: auto;
+  }
+
+  .pipeline-col {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 14px;
+    min-height: 200px;
+  }
+
+  .pipeline-col-header {
+    font-size: 9px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .pipeline-count {
+    background: var(--tag-bg);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    font-size: 9px;
+    color: var(--gold);
+  }
+
+  .pipeline-item {
+    background: #0d0d0a;
+    border: 1px solid var(--border);
+    padding: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .pipeline-item:hover {
+    border-color: var(--gold-dim);
+  }
+
+  .pipeline-item-title {
+    font-size: 11px;
+    color: var(--offwhite);
+    line-height: 1.4;
+    margin-bottom: 4px;
+  }
+
+  .pipeline-item-meta {
+    font-size: 9px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+  }
+
+  /* BRIEF OUTPUT */
+  .brief-output {
+    background: #0d0d0a;
+    border: 1px solid var(--gold-dim);
+    padding: 24px;
+    margin-top: 24px;
+    display: none;
+    font-size: 12px;
+    line-height: 1.8;
+    color: var(--offwhite);
+  }
+
+  .brief-output.visible { display: block; }
+
+  .brief-output h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .brief-section {
+    margin-bottom: 14px;
+  }
+
+  .brief-label {
+    font-size: 9px;
+    color: var(--gold-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .brief-value {
+    color: var(--offwhite);
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+    font-size: 13px;
+  }
+
+  /* INSPIRATION LOG */
+  .inspo-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 14px;
+  }
+
+  .inspo-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    padding: 16px;
+    cursor: pointer;
+    transition: border-color 0.15s;
+  }
+
+  .inspo-card:hover { border-color: var(--gold-dim); }
+
+  .inspo-card-title {
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  .inspo-card-note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-bottom: 10px;
+  }
+
+  /* NARRATIVE THREAD */
+  .thread-item {
+    border-left: 2px solid var(--gold-dim);
+    padding: 12px 16px;
+    margin-bottom: 14px;
+    background: var(--card);
+    position: relative;
+  }
+
+  .thread-item::before {
+    content: '';
+    position: absolute;
+    left: -5px;
+    top: 16px;
+    width: 8px;
+    height: 8px;
+    background: var(--gold);
+    border-radius: 50%;
+  }
+
+  .thread-date {
+    font-size: 9px;
+    color: var(--gold-dim);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+
+  .thread-text {
+    font-size: 12px;
+    color: var(--offwhite);
+    line-height: 1.6;
+    font-style: italic;
+    font-family: 'Playfair Display', serif;
+  }
+
+  /* MODAL */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.85);
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--card);
+    border: 1px solid var(--gold-dim);
+    padding: 28px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+  }
+
+  .modal-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+    margin-bottom: 20px;
+  }
+
+  .modal-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    background: none;
+    border: none;
+    color: var(--muted);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    font-family: monospace;
+  }
+
+  .modal-close:hover { color: var(--offwhite); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    border: 1px dashed var(--border);
+  }
+
+  /* DIVIDER */
+  .divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 28px 0;
+  }
+
+  /* STATUS SELECT inline */
+  .status-select {
+    background: none;
+    border: none;
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 0;
+    color: inherit;
+  }
+
+  /* TICKER */
+  .ticker-bar {
+    background: var(--gold);
+    color: var(--black);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    padding: 4px 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  .ticker-inner {
+    display: inline-block;
+    animation: ticker 30s linear infinite;
+  }
+
+  @keyframes ticker {
+    from { transform: translateX(100vw); }
+    to { transform: translateX(-100%); }
+  }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    main { padding: 16px; }
+    header { padding: 16px; flex-wrap: wrap; }
+    .form-row { grid-template-columns: 1fr; }
+    .pipeline { grid-template-columns: 1fr 1fr; }
+    nav button { padding: 6px 10px; font-size: 10px; }
+    .card-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker-bar">
+  <span class="ticker-inner">
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;THE OLD LINE COMPANY &nbsp;·&nbsp; CONTENT OPERATIONS &nbsp;·&nbsp; A&R DASHBOARD &nbsp;·&nbsp; STEVE IS COMING IN FROM THE DESERT &nbsp;·&nbsp; THE OLD LINE COMPANY &nbsp;·&nbsp; CONTENT OPERATIONS &nbsp;·&nbsp; A&R DASHBOARD &nbsp;·&nbsp; STAND BY &nbsp;·&nbsp; STAND BY &nbsp;·&nbsp;
+  </span>
+</div>
+
+<header>
+  <div class="logo">OLC <span>The Old Line Company</span></div>
+  <nav>
+    <button class="active" onclick="showPanel('pipeline')">Pipeline</button>
+    <button onclick="showPanel('brief')">Brief Builder</button>
+    <button onclick="showPanel('inspo')">Inspo Log</button>
+    <button onclick="showPanel('thread')">The Thread</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- PIPELINE PANEL -->
+  <div id="panel-pipeline" class="panel active">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Production Pipeline</div>
+        <div class="section-sub">All active assets across stages</div>
+      </div>
+      <button class="btn btn-sm" onclick="showPanel('brief')">+ New Brief</button>
+    </div>
+
+    <div class="pipeline" id="pipeline-board"></div>
+
+    <hr class="divider">
+
+    <div class="section-header">
+      <div class="section-title" style="font-size:16px;">All Assets</div>
+    </div>
+    <div class="card-grid" id="all-assets-grid"></div>
+  </div>
+
+  <!-- BRIEF BUILDER PANEL -->
+  <div id="panel-brief" class="panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Brief Builder</div>
+        <div class="section-sub">Ideate → Structure → Produce</div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Project Title</label>
+          <input type="text" id="b-title" placeholder="e.g. Angel Fist — Capcom Kickers">
+        </div>
+        <div class="form-group">
+          <label>Format</label>
+          <select id="b-format">
+            <option value="">— Select Format —</option>
+            <option>Meme / Art Poster</option>
+            <option>Short-Form Video</option>
+            <option>Interstitial / Narrative</option>
+            <option>VO Script</option>
+            <option>Reaction / Remix</option>
+            <option>VFX / Visual Shock</option>
+            <option>Text-Over-Footage</option>
+            <option>Caption / Copy</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Inspiration Source</label>
+        <input type="text" id="b-inspo" placeholder="e.g. 1994 Street Fighter II arcade cabinet art / Roger Corman one-sheets">
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Visual / Tonal Reference</label>
+          <input type="text" id="b-ref" placeholder="Designer, director, era, style">
+        </div>
+        <div class="form-group">
+          <label>Story Lens</label>
+          <select id="b-lens">
+            <option value="">— Select Lens —</option>
+            <option>Emotion — what did it feel like</option>
+            <option>Transformation — before and after</option>
+            <option>Conflict — the tension, the challenge</option>
+            <option>Curiosity — the open loop, the hook</option>
+            <option>Teaching — one sharp actionable insight</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Subject / Theme / Character / Setting</label>
+        <textarea id="b-subject" placeholder="e.g. Female Capcom fighters known for kick-based movesets — Chun-Li, Juri, Cammy, Ibuki, Karin..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>What I Want to Communicate</label>
+        <textarea id="b-message" placeholder="The core message, feeling, or joke this piece needs to land..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>Target Platform(s)</label>
+          <input type="text" id="b-platforms" placeholder="Instagram, TikTok, YouTube Shorts...">
+        </div>
+        <div class="form-group">
+          <label>Target Audience (the one person)</label>
+          <input type="text" id="b-audience" placeholder="e.g. 30s male, grew up on arcade fighters, nostalgic, irony-fluent">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Hook Stack Notes</label>
+        <textarea id="b-hook" placeholder="Visual hook / Verbal hook / Audio hook / Text hook ideas..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>Technical Notes / Reference Specs</label>
+        <textarea id="b-tech" placeholder="Known or likely technical specs, settings, software, equipment, process notes..."></textarea>
+      </div>
+
+      <div class="form-group">
+        <label>OLC Continuity / Narrative Thread Tie-In</label>
+        <textarea id="b-thread" placeholder="How does this connect to or advance The Thread? (optional)"></textarea>
+      </div>
+
+      <!-- STORY ENGINE -->
+      <div style="margin-bottom:16px;">
+        <button type="button" onclick="toggleStory()" style="background:none;border:none;color:var(--gold-dim);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;padding:0;display:flex;align-items:center;gap:8px;">
+          <span id="story-toggle-icon">▶</span> STORY ENGINE — The Six Questions (optional)
+        </button>
+        <div id="story-section" style="display:none;margin-top:16px;padding:20px;border:1px solid var(--border);background:#0d0d0a;">
+          <div style="font-size:10px;color:var(--muted);letter-spacing:0.15em;margin-bottom:16px;line-height:1.8;">
+            Answer as much or as little as you want. Each answer opens the next circle.
+          </div>
+          <div class="form-group">
+            <label>① Who is it about?</label>
+            <textarea id="s-who" placeholder="The character, subject, or stand-in for your audience..." style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>② What do they want?</label>
+            <textarea id="s-want" placeholder="The goal, the dream, the thing they're reaching for..." style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>③ Why can't they get it?</label>
+            <textarea id="s-obstacle" placeholder="The obstacle, the system, the thing in the way..." style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>④ What do they do about it?</label>
+            <textarea id="s-action" placeholder="The attempt, the move, the thing they try..." style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>⑤ Why doesn't that work?</label>
+            <textarea id="s-fail" placeholder="The complication, the twist, the reason it falls short..." style="min-height:60px;"></textarea>
+          </div>
+          <div class="form-group">
+            <label>⑥ How does it end?</label>
+            <textarea id="s-end" placeholder="The resolution — or the open loop if we're not paying it off yet..." style="min-height:60px;"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>Initial Status</label>
+        <select id="b-status">
+          <option value="idea">Idea</option>
+          <option value="brief" selected>Brief</option>
+          <option value="production">In Production</option>
+        </select>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn" onclick="saveBrief()">Save → Pipeline</button>
+        <button class="btn" onclick="generateBriefDoc()">Brief Doc</button>
+        <button class="btn" onclick="analyzeBrief()" id="analyze-btn">✦ Analyze</button>
+        <button class="btn btn-danger btn-sm" onclick="clearBriefForm()">Clear</button>
+      </div>
+    </div>
+
+    <!-- AI ANALYSIS OUTPUT -->
+    <div id="ai-analysis" style="display:none;background:#0d0d0a;border:1px solid var(--gold-dim);padding:24px;margin-bottom:16px;">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);letter-spacing:0.1em;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;">
+        ✦ OLC Brief Analysis
+      </div>
+      <div id="ai-analysis-content" style="font-size:13px;line-height:1.8;color:var(--offwhite);"></div>
+    </div>
+
+    <div class="brief-output" id="brief-output"></div>
+  </div>
+
+  <!-- INSPO LOG PANEL -->
+  <div id="panel-inspo" class="panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">Inspiration Log</div>
+        <div class="section-sub">Raw material — references, links, images, notes</div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-row">
+        <div class="form-group">
+          <label>Title / Source</label>
+          <input type="text" id="i-title" placeholder="e.g. Drew Struzan — Indiana Jones poster">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="i-type">
+            <option>Visual Reference</option>
+            <option>Director / Designer</option>
+            <option>Film / Show</option>
+            <option>Music</option>
+            <option>Era / Movement</option>
+            <option>Meme / Cultural Moment</option>
+            <option>Personal Memory</option>
+            <option>Other</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Link / URL (optional)</label>
+        <input type="text" id="i-link" placeholder="https://...">
+      </div>
+      <div class="form-group">
+        <label>Notes — what you see, what you feel, what you want to steal</label>
+        <textarea id="i-notes" placeholder="Raw thoughts. No structure required."></textarea>
+      </div>
+      <div class="form-group">
+        <label>Tags (comma separated)</label>
+        <input type="text" id="i-tags" placeholder="e.g. poster, 90s, martial arts, grindhouse">
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="saveInspo()">Log It</button>
+      </div>
+    </div>
+
+    <div class="inspo-grid" id="inspo-grid"></div>
+  </div>
+
+  <!-- THE THREAD PANEL -->
+  <div id="panel-thread" class="panel">
+    <div class="section-header">
+      <div>
+        <div class="section-title">The Thread</div>
+        <div class="section-sub">The narrative. Steve from the desert. The joke that hasn't been paid off yet.</div>
+      </div>
+    </div>
+
+    <div class="form-panel">
+      <div class="form-group">
+        <label>Thread Entry — drop text, copy, a moment, an idea</label>
+        <textarea id="t-text" placeholder="He's coming. Platform unknown. Date unknown. No one has asked why." style="min-height:100px;"></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Platform / Channel</label>
+          <input type="text" id="t-platform" placeholder="Instagram / TikTok / All / Internal">
+        </div>
+        <div class="form-group">
+          <label>Type</label>
+          <select id="t-type">
+            <option>Narrative Drop</option>
+            <option>Copy / Script</option>
+            <option>Structural Note</option>
+            <option>Payoff Idea</option>
+            <option>Character Note</option>
+            <option>World-Building</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-actions">
+        <button class="btn" onclick="saveThread()">Add to Thread</button>
+      </div>
+    </div>
+
+    <div id="thread-log"></div>
+  </div>
+
+</main>
+
+<!-- ASSET DETAIL MODAL -->
+<div class="modal-overlay" id="asset-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<script>
+// ─── DATA LAYER ───────────────────────────────────────────────────────────────
+
+const STORAGE_KEYS = {
+  assets: 'olc_assets',
+  inspo: 'olc_inspo',
+  thread: 'olc_thread'
+};
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; }
+  catch(e) { return []; }
+}
+
+function save(key, data) {
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+}
+
+function today() {
+  return new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────────────────────────
+
+function toggleStory() {
+  const sec = document.getElementById('story-section');
+  const icon = document.getElementById('story-toggle-icon');
+  const open = sec.style.display === 'none';
+  sec.style.display = open ? 'block' : 'none';
+  icon.textContent = open ? '▼' : '▶';
+}
+
+function collectStoryData() {
+  return {
+    who: getFormVal('s-who'),
+    want: getFormVal('s-want'),
+    obstacle: getFormVal('s-obstacle'),
+    action: getFormVal('s-action'),
+    fail: getFormVal('s-fail'),
+    end: getFormVal('s-end')
+  };
+}
+
+async function analyzeBrief() {
+  const d = collectBriefData();
+  const s = collectStoryData();
+
+  const hasContent = d.title || d.subject || d.message || s.who || s.want;
+  if (!hasContent) {
+    alert('Fill in at least a title and subject before analyzing.');
+    return;
+  }
+
+  const btn = document.getElementById('analyze-btn');
+  const panel = document.getElementById('ai-analysis');
+  const content = document.getElementById('ai-analysis-content');
+
+  btn.textContent = '... thinking';
+  btn.disabled = true;
+  panel.style.display = 'block';
+  content.innerHTML = '<span style="color:var(--muted);letter-spacing:0.15em;font-size:11px;">READING YOUR BRIEF —</span>';
+  panel.scrollIntoView({ behavior: 'smooth' });
+
+  const storyBlock = (s.who || s.want || s.obstacle || s.action || s.fail || s.end) ? `
+STORY ENGINE (Six Questions):
+1. Who is it about? ${s.who || '(not answered)'}
+2. What do they want? ${s.want || '(not answered)'}
+3. Why can't they get it? ${s.obstacle || '(not answered)'}
+4. What do they do about it? ${s.action || '(not answered)'}
+5. Why doesn't that work? ${s.fail || '(not answered)'}
+6. How does it end? ${s.end || '(not answered)'}` : '';
+
+  const prompt = `You are the internal creative intelligence for The Old Line Company (OLC) — a content studio with a distinct voice. Tone range: Michigan J. Frog (timeless, self-aware, classy absurdism) to Alan Kalter (will interrupt the broadcast to come find you). The brand is a curating presence not yet revealed — think narrator you sense before you meet. IYK energy. High concept but broadly enjoyable. Reference, cross-reference, allusion, nostalgia.
+
+A creative brief has been submitted. Analyze it and return THREE things:
+
+1. HOOK ANALYSIS — Is the hook strong? What's working, what's missing? Suggest 2 specific alternative hooks using the stack: visual + verbal + audio + text. Each hook must contain curiosity, emotion, AND urgency.
+
+2. STORY GAP CHECK — Using the Six Questions story framework (who / want / obstacle / action / fail / end), identify which circles are fully drawn, which are thin, and what one addition would deepen the piece most.
+
+3. PLATFORM & FORMAT RECOMMENDATION — Given the content, audience, and message, which platform should lead and why? Is the format right or should it shift?
+
+Keep it sharp. No fluff. Talk to the creator like a smart collaborator who has read everything and has opinions.
+
+BRIEF:
+Title: ${d.title}
+Format: ${d.format || 'not specified'}
+Inspiration: ${d.inspo || 'not specified'}
+Visual/Tonal Reference: ${d.ref || 'not specified'}
+Story Lens: ${d.lens || 'not specified'}
+Subject/Theme/Character/Setting: ${d.subject || 'not specified'}
+What I want to communicate: ${d.message || 'not specified'}
+Target Audience: ${d.audience || 'not specified'}
+Target Platforms: ${d.platforms || 'not specified'}
+Hook Stack Notes: ${d.hook || 'not specified'}
+Technical Notes: ${d.tech || 'not specified'}
+OLC Thread Tie-In: ${d.thread || 'none'}
+${storyBlock}
+
+Respond in plain text with clear section headers. No markdown asterisks. Use — dashes and line breaks for structure.`;
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+
+    const data = await response.json();
+    const text = data.content?.map(c => c.text || '').join('') || 'No response received.';
+
+    content.innerHTML = text
+      .split('\n')
+      .map(line => {
+        if (line.match(/^[0-9]\./) || line.match(/^(HOOK|STORY|PLATFORM)/i)) {
+          return `<div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gold);letter-spacing:0.1em;margin-top:18px;margin-bottom:6px;">${line}</div>`;
+        }
+        if (line.trim() === '') return '<br>';
+        return `<div style="margin-bottom:4px;">${line}</div>`;
+      })
+      .join('');
+
+  } catch(err) {
+    content.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}. Try again or check connection.</span>`;
+  }
+
+  btn.textContent = '✦ Analyze';
+  btn.disabled = false;
+}
+
+
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-' + name).classList.add('active');
+  const btns = document.querySelectorAll('nav button');
+  const labels = { pipeline: 0, brief: 1, inspo: 2, thread: 3 };
+  btns[labels[name]].classList.add('active');
+  if (name === 'pipeline') renderPipeline();
+  if (name === 'inspo') renderInspo();
+  if (name === 'thread') renderThread();
+}
+
+// ─── BRIEF BUILDER ────────────────────────────────────────────────────────────
+
+function getFormVal(id) {
+  return document.getElementById(id)?.value?.trim() || '';
+}
+
+function clearBriefForm() {
+  ['b-title','b-inspo','b-ref','b-subject','b-message','b-platforms','b-audience','b-hook','b-tech','b-thread',
+   's-who','s-want','s-obstacle','s-action','s-fail','s-end']
+    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['b-format','b-lens','b-status'].forEach(id => {
+    const el = document.getElementById(id); if(el) el.selectedIndex = 0;
+  });
+  document.getElementById('brief-output').classList.remove('visible');
+  document.getElementById('ai-analysis').style.display = 'none';
+  document.getElementById('story-section').style.display = 'none';
+  document.getElementById('story-toggle-icon').textContent = '▶';
+}
+
+function collectBriefData() {
+  return {
+    id: uid(),
+    title: getFormVal('b-title') || 'Untitled',
+    format: getFormVal('b-format'),
+    inspo: getFormVal('b-inspo'),
+    ref: getFormVal('b-ref'),
+    lens: getFormVal('b-lens'),
+    subject: getFormVal('b-subject'),
+    message: getFormVal('b-message'),
+    platforms: getFormVal('b-platforms'),
+    audience: getFormVal('b-audience'),
+    hook: getFormVal('b-hook'),
+    tech: getFormVal('b-tech'),
+    thread: getFormVal('b-thread'),
+    story: {
+      who: getFormVal('s-who'),
+      want: getFormVal('s-want'),
+      obstacle: getFormVal('s-obstacle'),
+      action: getFormVal('s-action'),
+      fail: getFormVal('s-fail'),
+      end: getFormVal('s-end')
+    },
+    status: getFormVal('b-status') || 'brief',
+    created: today()
+  };
+}
+
+function saveBrief() {
+  const data = collectBriefData();
+  if (!data.title || data.title === 'Untitled') {
+    alert('Add a project title before saving.');
+    return;
+  }
+  const assets = load(STORAGE_KEYS.assets);
+  assets.unshift(data);
+  save(STORAGE_KEYS.assets, assets);
+  clearBriefForm();
+  showPanel('pipeline');
+}
+
+function generateBriefDoc() {
+  const d = collectBriefData();
+  const out = document.getElementById('brief-output');
+
+  out.innerHTML = `
+    <h3>— OLC Creative Brief —</h3>
+    <div class="brief-section">
+      <div class="brief-label">Project</div>
+      <div class="brief-value">${d.title || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Format</div>
+      <div class="brief-value">${d.format || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Inspiration Source</div>
+      <div class="brief-value">${d.inspo || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Visual / Tonal Reference</div>
+      <div class="brief-value">${d.ref || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Story Lens</div>
+      <div class="brief-value">${d.lens || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Subject / Theme / Character / Setting</div>
+      <div class="brief-value">${d.subject || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">What I Want to Communicate</div>
+      <div class="brief-value">${d.message || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Target Audience</div>
+      <div class="brief-value">${d.audience || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Target Platforms</div>
+      <div class="brief-value">${d.platforms || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Hook Stack</div>
+      <div class="brief-value">${d.hook || '—'}</div>
+    </div>
+    <div class="brief-section">
+      <div class="brief-label">Technical Notes</div>
+      <div class="brief-value">${d.tech || '—'}</div>
+    </div>
+    ${d.thread ? `<div class="brief-section">
+      <div class="brief-label">Thread Tie-In</div>
+      <div class="brief-value">${d.thread}</div>
+    </div>` : ''}
+    <div style="margin-top:20px; padding-top:12px; border-top:1px solid var(--border); font-size:10px; color:var(--muted); letter-spacing:0.15em;">
+      GENERATED ${today()} &nbsp;·&nbsp; THE OLD LINE COMPANY &nbsp;·&nbsp; INTERNAL USE
+    </div>
+  `;
+
+  out.classList.add('visible');
+  out.scrollIntoView({ behavior: 'smooth' });
+}
+
+// ─── PIPELINE ─────────────────────────────────────────────────────────────────
+
+const STAGES = [
+  { key: 'idea', label: 'Idea' },
+  { key: 'brief', label: 'Brief' },
+  { key: 'production', label: 'Production' },
+  { key: 'review', label: 'Review' },
+  { key: 'approved', label: 'Approved' },
+  { key: 'scheduled', label: 'Scheduled' },
+  { key: 'live', label: 'Live' },
+  { key: 'analytics', label: 'Analytics' }
+];
+
+function renderPipeline() {
+  const assets = load(STORAGE_KEYS.assets);
+  const board = document.getElementById('pipeline-board');
+  const grid = document.getElementById('all-assets-grid');
+
+  // Pipeline columns — show first 4 stages
+  const shown = ['idea','brief','production','review'];
+  board.innerHTML = shown.map(stageKey => {
+    const stage = STAGES.find(s => s.key === stageKey);
+    const items = assets.filter(a => a.status === stageKey);
+    return `
+      <div class="pipeline-col">
+        <div class="pipeline-col-header">
+          ${stage.label}
+          <span class="pipeline-count">${items.length}</span>
+        </div>
+        ${items.length === 0
+          ? '<div style="font-size:10px;color:var(--muted);padding:12px 0;text-align:center;letter-spacing:0.1em;">EMPTY</div>'
+          : items.map(a => `
+            <div class="pipeline-item" onclick="openAsset('${a.id}')">
+              <div class="pipeline-item-title">${a.title}</div>
+              <div class="pipeline-item-meta">${a.format || 'No format'} · ${a.created || ''}</div>
+            </div>
+          `).join('')}
+      </div>
+    `;
+  }).join('');
+
+  // All assets grid
+  if (assets.length === 0) {
+    grid.innerHTML = '<div class="empty">No assets yet — start a brief to get moving</div>';
+    return;
+  }
+
+  grid.innerHTML = assets.map(a => `
+    <div class="card" onclick="openAsset('${a.id}')">
+      <div class="card-meta">${a.created || ''}</div>
+      <div class="card-title">${a.title}</div>
+      <div class="card-body">${a.message ? a.message.slice(0, 120) + (a.message.length > 120 ? '…' : '') : a.subject ? a.subject.slice(0, 120) + '…' : '—'}</div>
+      <div class="card-footer">
+        <span class="status status-${a.status}">${a.status}</span>
+        ${a.format ? `<span class="tag tag-format">${a.format}</span>` : ''}
+        ${a.platforms ? a.platforms.split(',').slice(0,2).map(p => `<span class="tag tag-platform">${p.trim()}</span>`).join('') : ''}
+      </div>
+    </div>
+  `).join('');
+}
+
+// ─── ASSET MODAL ──────────────────────────────────────────────────────────────
+
+function openAsset(id) {
+  const assets = load(STORAGE_KEYS.assets);
+  const a = assets.find(x => x.id === id);
+  if (!a) return;
+
+  const stageOptions = STAGES.map(s =>
+    `<option value="${s.key}" ${a.status === s.key ? 'selected' : ''}>${s.label}</option>`
+  ).join('');
+
+  document.getElementById('modal-content').innerHTML = `
+    <div class="modal-title">${a.title}</div>
+    <div style="margin-bottom:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
+      <span class="status status-${a.status}" id="modal-status-badge">${a.status}</span>
+      <span style="font-size:10px;color:var(--muted);letter-spacing:0.15em;">MOVE TO →</span>
+      <select onchange="updateStatus('${id}', this.value)" style="background:#0d0d0a;border:1px solid var(--border);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;padding:4px 8px;cursor:pointer;">
+        ${stageOptions}
+      </select>
+    </div>
+    ${row('Format', a.format)}
+    ${row('Inspiration', a.inspo)}
+    ${row('Reference', a.ref)}
+    ${row('Story Lens', a.lens)}
+    ${row('Subject / Theme', a.subject)}
+    ${row('Message', a.message)}
+    ${row('Audience', a.audience)}
+    ${row('Platforms', a.platforms)}
+    ${row('Hook Stack', a.hook)}
+    ${row('Technical Notes', a.tech)}
+    ${a.thread ? row('Thread Tie-In', a.thread) : ''}
+    <div style="margin-top:20px; display:flex; gap:10px;">
+      <button class="btn btn-sm" onclick="editAsset('${id}')">Edit Brief</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteAsset('${id}')">Delete</button>
+    </div>
+  `;
+
+  document.getElementById('asset-modal').classList.add('open');
+}
+
+function row(label, val) {
+  if (!val) return '';
+  return `
+    <div class="brief-section">
+      <div class="brief-label">${label}</div>
+      <div style="font-size:12px;color:var(--offwhite);line-height:1.6;margin-top:3px;">${val}</div>
+    </div>
+  `;
+}
+
+function closeModal() {
+  document.getElementById('asset-modal').classList.remove('open');
+}
+
+function updateStatus(id, newStatus) {
+  const assets = load(STORAGE_KEYS.assets);
+  const idx = assets.findIndex(x => x.id === id);
+  if (idx === -1) return;
+  assets[idx].status = newStatus;
+  save(STORAGE_KEYS.assets, assets);
+  renderPipeline();
+  document.getElementById('asset-modal').classList.remove('open');
+}
+
+function deleteAsset(id) {
+  if (!confirm('Delete this asset? This cannot be undone.')) return;
+  let assets = load(STORAGE_KEYS.assets);
+  assets = assets.filter(x => x.id !== id);
+  save(STORAGE_KEYS.assets, assets);
+  closeModal();
+  renderPipeline();
+}
+
+function editAsset(id) {
+  const assets = load(STORAGE_KEYS.assets);
+  const a = assets.find(x => x.id === id);
+  if (!a) return;
+  closeModal();
+  showPanel('brief');
+  setTimeout(() => {
+    document.getElementById('b-title').value = a.title || '';
+    document.getElementById('b-inspo').value = a.inspo || '';
+    document.getElementById('b-ref').value = a.ref || '';
+    document.getElementById('b-subject').value = a.subject || '';
+    document.getElementById('b-message').value = a.message || '';
+    document.getElementById('b-platforms').value = a.platforms || '';
+    document.getElementById('b-audience').value = a.audience || '';
+    document.getElementById('b-hook').value = a.hook || '';
+    document.getElementById('b-tech').value = a.tech || '';
+    document.getElementById('b-thread').value = a.thread || '';
+    setSelectVal('b-format', a.format);
+    setSelectVal('b-lens', a.lens);
+    setSelectVal('b-status', a.status);
+    // Remove old entry so re-save replaces it
+    let all = load(STORAGE_KEYS.assets);
+    all = all.filter(x => x.id !== id);
+    save(STORAGE_KEYS.assets, all);
+  }, 50);
+}
+
+function setSelectVal(id, val) {
+  const el = document.getElementById(id);
+  if (!el || !val) return;
+  for (let i = 0; i < el.options.length; i++) {
+    if (el.options[i].value === val || el.options[i].text === val) {
+      el.selectedIndex = i; return;
+    }
+  }
+}
+
+// ─── INSPO LOG ────────────────────────────────────────────────────────────────
+
+function saveInspo() {
+  const title = getFormVal('i-title');
+  if (!title) { alert('Give this inspiration a title.'); return; }
+  const entry = {
+    id: uid(),
+    title,
+    type: getFormVal('i-type'),
+    link: getFormVal('i-link'),
+    notes: getFormVal('i-notes'),
+    tags: getFormVal('i-tags'),
+    created: today()
+  };
+  const data = load(STORAGE_KEYS.inspo);
+  data.unshift(entry);
+  save(STORAGE_KEYS.inspo, data);
+  ['i-title','i-link','i-notes','i-tags'].forEach(id => { document.getElementById(id).value = ''; });
+  document.getElementById('i-type').selectedIndex = 0;
+  renderInspo();
+}
+
+function renderInspo() {
+  const data = load(STORAGE_KEYS.inspo);
+  const grid = document.getElementById('inspo-grid');
+  if (data.length === 0) {
+    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No inspiration logged yet</div>';
+    return;
+  }
+  grid.innerHTML = data.map(e => `
+    <div class="inspo-card">
+      <div class="card-meta">${e.type} · ${e.created}</div>
+      <div class="inspo-card-title">${e.title}</div>
+      ${e.notes ? `<div class="inspo-card-note">${e.notes.slice(0, 140)}${e.notes.length > 140 ? '…' : ''}</div>` : ''}
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
+        <div class="tags">
+          ${e.tags ? e.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('') : ''}
+        </div>
+        <div style="display:flex;gap:6px;">
+          ${e.link ? `<a href="${e.link}" target="_blank" style="font-size:9px;color:var(--gold);letter-spacing:0.1em;text-decoration:none;border-bottom:1px solid var(--gold-dim);">LINK ↗</a>` : ''}
+          <button class="btn btn-danger btn-sm" onclick="deleteInspo('${e.id}')">✕</button>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteInspo(id) {
+  let data = load(STORAGE_KEYS.inspo);
+  data = data.filter(x => x.id !== id);
+  save(STORAGE_KEYS.inspo, data);
+  renderInspo();
+}
+
+// ─── THE THREAD ───────────────────────────────────────────────────────────────
+
+function saveThread() {
+  const text = getFormVal('t-text');
+  if (!text) return;
+  const entry = {
+    id: uid(),
+    text,
+    platform: getFormVal('t-platform'),
+    type: getFormVal('t-type'),
+    created: today()
+  };
+  const data = load(STORAGE_KEYS.thread);
+  data.push(entry);
+  save(STORAGE_KEYS.thread, data);
+  document.getElementById('t-text').value = '';
+  document.getElementById('t-platform').value = '';
+  renderThread();
+}
+
+function renderThread() {
+  const data = load(STORAGE_KEYS.thread);
+  const log = document.getElementById('thread-log');
+  if (data.length === 0) {
+    log.innerHTML = '<div class="empty">The thread has not yet begun. He is still in the desert.</div>';
+    return;
+  }
+  log.innerHTML = data.map(e => `
+    <div class="thread-item">
+      <div class="thread-date">${e.type} · ${e.platform || 'Unassigned'} · ${e.created}</div>
+      <div class="thread-text">${e.text}</div>
+      <div style="margin-top:8px;">
+        <button class="btn btn-danger btn-sm" onclick="deleteThread('${e.id}')">Remove</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function deleteThread(id) {
+  let data = load(STORAGE_KEYS.thread);
+  data = data.filter(x => x.id !== id);
+  save(STORAGE_KEYS.thread, data);
+  renderThread();
+}
+
+// ─── CLOSE MODAL ON OVERLAY CLICK ─────────────────────────────────────────────
+
+document.getElementById('asset-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeModal();
+});
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+
+renderPipeline();
+</script>
+</body>
+</html>
