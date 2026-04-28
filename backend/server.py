@@ -1,4 +1,4 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, HTTPException
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -9,6 +9,7 @@ from pydantic import BaseModel, Field, ConfigDict
 from typing import List
 import uuid
 from datetime import datetime, timezone
+from emergentintegrations.llm.chat import LlmChat, UserMessage
 
 
 ROOT_DIR = Path(__file__).parent
@@ -65,6 +66,36 @@ async def get_status_checks():
             check['timestamp'] = datetime.fromisoformat(check['timestamp'])
     
     return status_checks
+
+
+# ─── BRIEF ANALYSIS (Claude via Emergent LLM Key) ─────────────────────────────
+
+class AnalyzeBriefRequest(BaseModel):
+    prompt: str
+
+class AnalyzeBriefResponse(BaseModel):
+    text: str
+
+@api_router.post("/analyze-brief", response_model=AnalyzeBriefResponse)
+async def analyze_brief(payload: AnalyzeBriefRequest):
+    api_key = os.environ.get('EMERGENT_LLM_KEY')
+    if not api_key:
+        raise HTTPException(status_code=500, detail="LLM key not configured")
+    if not payload.prompt or not payload.prompt.strip():
+        raise HTTPException(status_code=400, detail="Prompt is required")
+
+    try:
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"olc-brief-{uuid.uuid4()}",
+            system_message="You are the internal creative intelligence for The Old Line Company (OLC)."
+        ).with_model("anthropic", "claude-4-sonnet-20250514")
+
+        response = await chat.send_message(UserMessage(text=payload.prompt))
+        return AnalyzeBriefResponse(text=str(response))
+    except Exception as e:
+        logger.exception("Brief analysis failed")
+        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 # Include the router in the main app
 app.include_router(api_router)

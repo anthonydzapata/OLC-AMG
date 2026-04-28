@@ -1001,18 +1001,19 @@ ${storyBlock}
 Respond in plain text with clear section headers. No markdown asterisks. Use — dashes and line breaks for structure.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch('https://ops-hub-64.preview.emergentagent.com/api/analyze-brief', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      body: JSON.stringify({ prompt: prompt })
     });
 
+    if (!response.ok) {
+      const errBody = await response.text();
+      throw new Error(`Server returned ${response.status}: ${errBody}`);
+    }
+
     const data = await response.json();
-    const text = data.content?.map(c => c.text || '').join('') || 'No response received.';
+    const text = data.text || 'No response received.';
 
     content.innerHTML = text
       .split('\n')
