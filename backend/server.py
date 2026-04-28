@@ -217,32 +217,35 @@ async def generate_prompt(payload: GeneratePromptRequest):
     """Assemble a structured executor prompt from the chosen directions.
     Pure template — no LLM call, no credit cost.
     """
-    title = payload.title.strip() or "Untitled inspiration → new piece"
+    def _s(v):
+        return (v or "").strip() if isinstance(v, str) else ""
+
+    title = _s(payload.title) or "Untitled inspiration → new piece"
     lines = [
         f"# Brief Prompt — {title}",
         "",
         "You are an executor (designer / illustrator / photographer / motion artist) producing a new piece in the OLC voice. Use the structure below as your spec. Make choices within these directions; do not deviate from the dimensions called out.",
         "",
         "## SUBJECT",
-        payload.subject.strip() or "(not specified)",
+        _s(payload.subject) or "(not specified)",
         "",
         "## METHOD",
-        payload.method.strip() or "(not specified)",
+        _s(payload.method) or "(not specified)",
         "",
         "## COMPOSITION",
-        payload.composition.strip() or "(not specified)",
+        _s(payload.composition) or "(not specified)",
         "",
         "## DESIGN LINEAGE / PHILOSOPHY",
-        payload.designer.strip() or "(not specified)",
+        _s(payload.designer) or "(not specified)",
         "",
         "## METHOD TO ACHIEVE THE LOOK",
-        payload.method_to_achieve.strip() or "(not specified)",
+        _s(payload.method_to_achieve) or "(not specified)",
         "",
         "## TECHNICAL SPECS / SETTINGS",
-        payload.technical_specs.strip() or "(not specified)",
+        _s(payload.technical_specs) or "(not specified)",
         "",
         "## CREATOR NOTES",
-        payload.notes.strip() or "(none)",
+        _s(payload.notes) or "(none)",
         "",
         "## DELIVERY",
         "- Honor the subject and composition exactly.",
