@@ -1101,6 +1101,35 @@
           <button class="btn btn-sm" onclick="copyFormatted()" data-testid="analyzer-copy-btn">Copy Formatted Text</button>
           <button class="btn btn-sm" onclick="saveToInspoLog()" data-testid="analyzer-save-inspo-btn">+ Save to Inspo Log</button>
         </div>
+
+        <div id="az-execute-section" style="display:none; margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
+          <div class="section-title" style="font-size:16px;">Execute — Produce Deliverable</div>
+          <div class="section-sub">Run the directive through OLC AI. Image or text. Iterate inline.</div>
+
+          <div class="toolbar-row" style="margin-top:14px;">
+            <button class="btn btn-primary" onclick="executeVisual()" data-testid="analyzer-execute-visual-btn">⌘ Generate Visual</button>
+            <button class="btn btn-primary" onclick="executeTreatment()" data-testid="analyzer-execute-treatment-btn">⌘ Generate Text Treatment</button>
+            <span id="az-execute-status" style="font-size:11px;color:var(--muted);letter-spacing:0.15em;align-self:center;"></span>
+          </div>
+
+          <div id="az-deliverable" style="margin-top:18px; display:none;">
+            <div id="az-deliverable-image" style="display:none; margin-bottom:16px;">
+              <img id="az-result-img" style="max-width:100%; border:1px solid var(--gold-dim);" alt="generated">
+              <div class="toolbar-row">
+                <button class="btn btn-sm" onclick="downloadImage()" data-testid="analyzer-download-image-btn">⬇ Download Image</button>
+              </div>
+            </div>
+            <div id="az-deliverable-text" class="prompt-output" style="display:none;"></div>
+            <div class="toolbar-row" id="az-deliverable-text-actions" style="display:none;">
+              <button class="btn btn-sm" onclick="copyTreatment()" data-testid="analyzer-copy-treatment-btn">Copy Treatment</button>
+            </div>
+          </div>
+
+          <div class="form-group" style="margin-top:18px;">
+            <label>Iterate — refinement note (optional)</label>
+            <textarea id="az-refine" placeholder="e.g. push contrast harder, drop the second focal point, rotate axis 15°" style="min-height:60px;" data-testid="analyzer-refine-input"></textarea>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -1669,12 +1698,12 @@ function deleteThread(id) {
 // ─── INSPO ANALYZER ───────────────────────────────────────────────────────────
 
 const AZ_FIELDS = [
-  { key: 'subject',           label: 'Subject',                       hint: 'What is being depicted' },
-  { key: 'method',            label: 'Method',                        hint: 'Technique / medium' },
-  { key: 'composition',       label: 'Composition',                   hint: 'Layout, focal points, framing' },
-  { key: 'designer',          label: 'Design Lineage / Philosophy',   hint: 'Designer or firm + their philosophy' },
-  { key: 'method_to_achieve', label: 'Method to Achieve the Look',    hint: 'How to recreate it — concrete steps' },
-  { key: 'technical_specs',   label: 'Technical Specs / Settings',    hint: 'Camera, software, equipment, settings' }
+  { key: 'subject',                label: 'Subject',                                hint: 'What is being depicted' },
+  { key: 'method',                 label: 'Method (Technique Mechanics)',           hint: 'Medium, surface, sequence of operations' },
+  { key: 'composition',            label: 'Composition (Geometry & Axis)',          hint: 'Ratios, focal points, balance, negative space' },
+  { key: 'structural_principles',  label: 'Structural & Compositional Principles',  hint: 'The mechanical rules at work — no attribution' },
+  { key: 'method_to_achieve',      label: 'Method to Achieve the Look',             hint: 'Step-by-step mechanics' },
+  { key: 'technical_specs',        label: 'Technical Specs / Settings',             hint: 'Equipment by category — never brand names' }
 ];
 
 let _azState = null;
@@ -1684,8 +1713,12 @@ function _azLoad() {
   _azState = load(STORAGE_KEYS.analyzer);
   if (!Array.isArray(_azState)) _azState = (_azState && typeof _azState === 'object') ? _azState : null;
   if (!_azState || Array.isArray(_azState)) {
-    _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '' };
+    _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '' };
   }
+  // ensure new fields exist on older states
+  if (!('refine' in _azState)) _azState.refine = '';
+  if (!('deliverable_image' in _azState)) _azState.deliverable_image = null;
+  if (!('deliverable_text' in _azState)) _azState.deliverable_text = '';
   return _azState;
 }
 
@@ -1721,6 +1754,24 @@ function initAnalyzer() {
     out.textContent = s.generated;
     out.style.display = 'block';
     document.getElementById('az-export-row').style.display = 'flex';
+    document.getElementById('az-execute-section').style.display = 'block';
+  }
+  if (s.refine) {
+    const r = document.getElementById('az-refine');
+    if (r) r.value = s.refine;
+  }
+  if (s.deliverable_image) {
+    const img = document.getElementById('az-result-img');
+    img.src = 'data:' + (s.deliverable_image.mime || 'image/png') + ';base64,' + s.deliverable_image.data;
+    document.getElementById('az-deliverable-image').style.display = 'block';
+    document.getElementById('az-deliverable').style.display = 'block';
+  }
+  if (s.deliverable_text) {
+    const t = document.getElementById('az-deliverable-text');
+    t.textContent = s.deliverable_text;
+    t.style.display = 'block';
+    document.getElementById('az-deliverable-text-actions').style.display = 'flex';
+    document.getElementById('az-deliverable').style.display = 'block';
   }
   bindAnalyzerInputs();
   bindDropZone();
@@ -1730,11 +1781,16 @@ function bindAnalyzerInputs() {
   const tEl = document.getElementById('az-title');
   const bEl = document.getElementById('az-bias');
   const nEl = document.getElementById('az-notes');
+  const rEl = document.getElementById('az-refine');
   if (tEl._bound) return;
   tEl._bound = bEl._bound = nEl._bound = true;
   tEl.addEventListener('input', () => { _azState.title = tEl.value; _azSave(); });
   bEl.addEventListener('input', () => { _azState.bias = bEl.value; _azSave(); });
   nEl.addEventListener('input', () => { _azState.notes = nEl.value; _azSave(); });
+  if (rEl && !rEl._bound) {
+    rEl._bound = true;
+    rEl.addEventListener('input', () => { _azState.refine = rEl.value; _azSave(); });
+  }
 }
 
 function bindDropZone() {
@@ -1909,7 +1965,7 @@ function _resolveChoice(f) {
   if (sel === 'custom') return _azState.customs[f.key] || '';
   if (sel === 'observed') {
     const o = node.observed || '';
-    return f.key === 'designer' && node.philosophy ? `${o} — ${node.philosophy}` : o;
+    return f.key === 'structural_principles' && node.philosophy ? `${o} — ${node.philosophy}` : o;
   }
   const m = sel.match(/^opt(\d+)$/);
   if (m) return (node.options || [])[Number(m[1])] || '';
@@ -1943,6 +1999,7 @@ async function generateDirective() {
     out.textContent = _azState.generated;
     out.style.display = 'block';
     document.getElementById('az-export-row').style.display = 'flex';
+    document.getElementById('az-execute-section').style.display = 'block';
     out.scrollIntoView({ behavior: 'smooth' });
     toast('Prompt generated');
   } catch (err) {
@@ -2054,19 +2111,121 @@ function sendAnalyzerToBrief() {
 
 function resetAnalyzer() {
   if (!confirm('Clear the analyzer? Your work product notes will be lost.')) return;
-  _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '' };
+  _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '' };
   _azSave();
   document.getElementById('az-title').value = '';
   document.getElementById('az-bias').value = '';
   document.getElementById('az-notes').value = '';
+  const r = document.getElementById('az-refine'); if (r) r.value = '';
   document.getElementById('az-preview').style.display = 'none';
   document.getElementById('az-preview').src = '';
   document.getElementById('az-dz-label').textContent = 'Drop reference image here';
   document.getElementById('az-breakdown').style.display = 'none';
   document.getElementById('az-prompt-output').style.display = 'none';
   document.getElementById('az-export-row').style.display = 'none';
+  document.getElementById('az-execute-section').style.display = 'none';
+  document.getElementById('az-deliverable').style.display = 'none';
+  document.getElementById('az-deliverable-image').style.display = 'none';
+  document.getElementById('az-deliverable-text').style.display = 'none';
+  document.getElementById('az-deliverable-text-actions').style.display = 'none';
   document.getElementById('az-status').textContent = '';
+  document.getElementById('az-execute-status').textContent = '';
   toast('Reset');
+}
+
+// ─── EXECUTE ──────────────────────────────────────────────────────────────────
+
+async function executeVisual() {
+  const s = _azLoad();
+  if (!s.generated) { alert('Generate the brief prompt first.'); return; }
+  const status = document.getElementById('az-execute-status');
+  const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
+  btns.forEach(b => b.disabled = true);
+  status.innerHTML = '<span style="color:var(--gold);">RENDERING — this can take 15-40s</span>';
+  try {
+    const res = await fetch(API_BASE + '/execute-visual', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: s.generated, refine: s.refine || '' })
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`);
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { throw new Error('Bad JSON: ' + text.slice(0, 120)); }
+    if (!data.images || !data.images.length) {
+      status.innerHTML = '<span style="color:var(--red);">No image returned. Model said: ' + (data.text || '(empty)').slice(0, 200) + '</span>';
+      return;
+    }
+    const img = data.images[0];
+    _azState.deliverable_image = { mime: img.mime_type, data: img.data };
+    _azSave();
+    const el = document.getElementById('az-result-img');
+    el.src = 'data:' + img.mime_type + ';base64,' + img.data;
+    document.getElementById('az-deliverable-image').style.display = 'block';
+    document.getElementById('az-deliverable').style.display = 'block';
+    document.getElementById('az-deliverable').scrollIntoView({ behavior: 'smooth' });
+    status.innerHTML = '<span style="color:var(--green);">VISUAL READY</span>';
+    toast('Visual generated');
+  } catch (err) {
+    status.innerHTML = `<span style="color:var(--red);">Visual failed — ${err.message}</span>`;
+  } finally {
+    btns.forEach(b => b.disabled = false);
+  }
+}
+
+async function executeTreatment() {
+  const s = _azLoad();
+  if (!s.generated) { alert('Generate the brief prompt first.'); return; }
+  const status = document.getElementById('az-execute-status');
+  const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
+  btns.forEach(b => b.disabled = true);
+  status.innerHTML = '<span style="color:var(--gold);">DRAFTING TREATMENT —</span>';
+  try {
+    const res = await fetch(API_BASE + '/execute-treatment', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt: s.generated, refine: s.refine || '' })
+    });
+    const text = await res.text();
+    if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`);
+    let data;
+    try { data = JSON.parse(text); }
+    catch (e) { throw new Error('Bad JSON: ' + text.slice(0, 120)); }
+    _azState.deliverable_text = data.text || '';
+    _azSave();
+    const t = document.getElementById('az-deliverable-text');
+    t.textContent = _azState.deliverable_text;
+    t.style.display = 'block';
+    document.getElementById('az-deliverable-text-actions').style.display = 'flex';
+    document.getElementById('az-deliverable').style.display = 'block';
+    document.getElementById('az-deliverable').scrollIntoView({ behavior: 'smooth' });
+    status.innerHTML = '<span style="color:var(--green);">TREATMENT READY</span>';
+    toast('Treatment generated');
+  } catch (err) {
+    status.innerHTML = `<span style="color:var(--red);">Treatment failed — ${err.message}</span>`;
+  } finally {
+    btns.forEach(b => b.disabled = false);
+  }
+}
+
+function downloadImage() {
+  const s = _azLoad();
+  if (!s.deliverable_image) return;
+  const url = 'data:' + s.deliverable_image.mime + ';base64,' + s.deliverable_image.data;
+  const ext = (s.deliverable_image.mime || 'image/png').split('/')[1] || 'png';
+  const safeTitle = (s.title || 'OLC_visual').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 60);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `${safeTitle}_${Date.now()}.${ext}`;
+  document.body.appendChild(a); a.click(); a.remove();
+  toast('Image downloaded');
+}
+
+function copyTreatment() {
+  const s = _azLoad();
+  if (!s.deliverable_text) return;
+  navigator.clipboard.writeText(s.deliverable_text).then(() => toast('Treatment copied'));
 }
 
 // ─── CLOSE MODAL ON OVERLAY CLICK ─────────────────────────────────────────────
