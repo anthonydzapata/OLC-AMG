@@ -719,6 +719,91 @@
     max-height: 500px;
     overflow-y: auto;
   }
+  textarea.prompt-output {
+    width: 100%;
+    min-height: 240px;
+    resize: vertical;
+    box-sizing: border-box;
+    overflow-y: auto;
+  }
+  textarea.prompt-output:focus {
+    outline: none;
+    border-color: var(--gold);
+  }
+  .prompt-output-hint {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    text-align: right;
+  }
+
+  .ref-zone {
+    border: 1px dashed var(--gold-dim);
+    background: var(--card);
+    padding: 18px 14px;
+    text-align: center;
+    cursor: pointer;
+    position: relative;
+    margin-top: 8px;
+    transition: all 0.15s;
+  }
+  .ref-zone:hover, .ref-zone.dragover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.05);
+  }
+  .ref-zone-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    color: var(--gold);
+    letter-spacing: 0.15em;
+  }
+  .ref-zone-sub {
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.1em;
+    margin-top: 4px;
+  }
+  .ref-zone input[type=file] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer;
+  }
+
+  .ref-strip {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 12px;
+  }
+  .ref-thumb {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    overflow: hidden;
+  }
+  .ref-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+  }
+  .ref-thumb-remove {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 18px; height: 18px;
+    border-radius: 50%;
+    background: var(--red);
+    color: var(--offwhite);
+    border: 1px solid var(--black);
+    cursor: pointer;
+    font-size: 11px;
+    font-family: 'DM Mono', monospace;
+    line-height: 1;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
 
   .toolbar-row {
     display: flex;
@@ -1094,7 +1179,8 @@
           <button class="btn btn-sm" onclick="sendAnalyzerToBrief()" data-testid="analyzer-send-to-brief-btn">→ Send to Brief Builder</button>
         </div>
 
-        <div id="az-prompt-output" class="prompt-output" style="display:none;"></div>
+        <textarea id="az-prompt-output" class="prompt-output" style="display:none;" placeholder="Generated brief prompt — edit freely before executing or exporting" data-testid="analyzer-prompt-output"></textarea>
+        <div id="az-prompt-hint" class="prompt-output-hint" style="display:none;">▲ EDITABLE — your edits save automatically and are used by Execute, Download, and Copy</div>
 
         <div class="toolbar-row" id="az-export-row" style="display:none;">
           <button class="btn" onclick="downloadDocx()" data-testid="analyzer-download-docx-btn">⬇ Download .docx</button>
@@ -1106,7 +1192,17 @@
           <div class="section-title" style="font-size:16px;">Execute — Produce Deliverable</div>
           <div class="section-sub">Run the directive through OLC AI. Image or text. Iterate inline.</div>
 
-          <div class="toolbar-row" style="margin-top:14px;">
+          <div style="margin-top:14px;">
+            <label style="font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.15em; color:var(--muted); text-transform:uppercase;">Reference images (optional) — drop, paste, or pick</label>
+            <div class="ref-zone" id="az-ref-zone" data-testid="analyzer-ref-zone">
+              <div class="ref-zone-label">+ DROP / PASTE / TAP TO ADD REFERENCES</div>
+              <div class="ref-zone-sub">JPG · PNG · WEBP · paste from clipboard works · max 4 images</div>
+              <input type="file" id="az-ref-file" accept="image/jpeg,image/png,image/webp" multiple data-testid="analyzer-ref-file-input">
+            </div>
+            <div class="ref-strip" id="az-ref-strip"></div>
+          </div>
+
+          <div class="toolbar-row" style="margin-top:18px;">
             <button class="btn btn-primary" onclick="executeVisual()" data-testid="analyzer-execute-visual-btn">⌘ Generate Visual</button>
             <button class="btn btn-primary" onclick="executeTreatment()" data-testid="analyzer-execute-treatment-btn">⌘ Generate Text Treatment</button>
             <span id="az-execute-status" style="font-size:11px;color:var(--muted);letter-spacing:0.15em;align-self:center;"></span>
@@ -1713,12 +1809,13 @@ function _azLoad() {
   _azState = load(STORAGE_KEYS.analyzer);
   if (!Array.isArray(_azState)) _azState = (_azState && typeof _azState === 'object') ? _azState : null;
   if (!_azState || Array.isArray(_azState)) {
-    _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '' };
+    _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '', references: [] };
   }
   // ensure new fields exist on older states
   if (!('refine' in _azState)) _azState.refine = '';
   if (!('deliverable_image' in _azState)) _azState.deliverable_image = null;
   if (!('deliverable_text' in _azState)) _azState.deliverable_text = '';
+  if (!Array.isArray(_azState.references)) _azState.references = [];
   return _azState;
 }
 
@@ -1751,8 +1848,9 @@ function initAnalyzer() {
   }
   if (s.generated) {
     const out = document.getElementById('az-prompt-output');
-    out.textContent = s.generated;
+    out.value = s.generated;
     out.style.display = 'block';
+    document.getElementById('az-prompt-hint').style.display = 'block';
     document.getElementById('az-export-row').style.display = 'flex';
     document.getElementById('az-execute-section').style.display = 'block';
   }
@@ -1773,8 +1871,11 @@ function initAnalyzer() {
     document.getElementById('az-deliverable-text-actions').style.display = 'flex';
     document.getElementById('az-deliverable').style.display = 'block';
   }
+  renderRefStrip();
   bindAnalyzerInputs();
   bindDropZone();
+  bindRefZone();
+  bindClipboardPaste();
 }
 
 function bindAnalyzerInputs() {
@@ -1782,6 +1883,7 @@ function bindAnalyzerInputs() {
   const bEl = document.getElementById('az-bias');
   const nEl = document.getElementById('az-notes');
   const rEl = document.getElementById('az-refine');
+  const pEl = document.getElementById('az-prompt-output');
   if (tEl._bound) return;
   tEl._bound = bEl._bound = nEl._bound = true;
   tEl.addEventListener('input', () => { _azState.title = tEl.value; _azSave(); });
@@ -1790,6 +1892,10 @@ function bindAnalyzerInputs() {
   if (rEl && !rEl._bound) {
     rEl._bound = true;
     rEl.addEventListener('input', () => { _azState.refine = rEl.value; _azSave(); });
+  }
+  if (pEl && !pEl._bound) {
+    pEl._bound = true;
+    pEl.addEventListener('input', () => { _azState.generated = pEl.value; _azSave(); });
   }
 }
 
@@ -1996,12 +2102,13 @@ async function generateDirective() {
     _azState.generated = data.prompt || '';
     _azSave();
     const out = document.getElementById('az-prompt-output');
-    out.textContent = _azState.generated;
+    out.value = _azState.generated;
     out.style.display = 'block';
+    document.getElementById('az-prompt-hint').style.display = 'block';
     document.getElementById('az-export-row').style.display = 'flex';
     document.getElementById('az-execute-section').style.display = 'block';
     out.scrollIntoView({ behavior: 'smooth' });
-    toast('Prompt generated');
+    toast('Prompt generated — edit before executing if you like');
   } catch (err) {
     alert('Generate failed: ' + err.message);
   }
@@ -2111,17 +2218,19 @@ function sendAnalyzerToBrief() {
 
 function resetAnalyzer() {
   if (!confirm('Clear the analyzer? Your work product notes will be lost.')) return;
-  _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '' };
+  _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '', references: [] };
   _azSave();
   document.getElementById('az-title').value = '';
   document.getElementById('az-bias').value = '';
   document.getElementById('az-notes').value = '';
   const r = document.getElementById('az-refine'); if (r) r.value = '';
+  const p = document.getElementById('az-prompt-output'); if (p) p.value = '';
   document.getElementById('az-preview').style.display = 'none';
   document.getElementById('az-preview').src = '';
   document.getElementById('az-dz-label').textContent = 'Drop reference image here';
   document.getElementById('az-breakdown').style.display = 'none';
   document.getElementById('az-prompt-output').style.display = 'none';
+  document.getElementById('az-prompt-hint').style.display = 'none';
   document.getElementById('az-export-row').style.display = 'none';
   document.getElementById('az-execute-section').style.display = 'none';
   document.getElementById('az-deliverable').style.display = 'none';
@@ -2130,23 +2239,113 @@ function resetAnalyzer() {
   document.getElementById('az-deliverable-text-actions').style.display = 'none';
   document.getElementById('az-status').textContent = '';
   document.getElementById('az-execute-status').textContent = '';
+  renderRefStrip();
   toast('Reset');
 }
 
 // ─── EXECUTE ──────────────────────────────────────────────────────────────────
 
+const MAX_REFS = 4;
+
+function bindRefZone() {
+  const dz = document.getElementById('az-ref-zone');
+  const input = document.getElementById('az-ref-file');
+  if (!dz || dz._bound) return;
+  dz._bound = true;
+  ['dragenter', 'dragover'].forEach(ev => {
+    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); });
+  });
+  ['dragleave', 'drop'].forEach(ev => {
+    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); });
+  });
+  dz.addEventListener('drop', (e) => {
+    const files = Array.from(e.dataTransfer?.files || []);
+    files.forEach(f => addReferenceFile(f));
+  });
+  input.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files || []);
+    files.forEach(f => addReferenceFile(f));
+    input.value = '';
+  });
+}
+
+function bindClipboardPaste() {
+  if (window._azPasteBound) return;
+  window._azPasteBound = true;
+  document.addEventListener('paste', (e) => {
+    const panel = document.getElementById('panel-analyzer');
+    if (!panel || !panel.classList.contains('active')) return;
+    const items = e.clipboardData?.items || [];
+    let captured = 0;
+    for (const item of items) {
+      if (item.kind === 'file' && /^image\/(jpeg|png|webp)$/i.test(item.type)) {
+        const file = item.getAsFile();
+        if (file) { addReferenceFile(file); captured++; }
+      }
+    }
+    if (captured > 0) {
+      e.preventDefault();
+    }
+  });
+}
+
+function addReferenceFile(file) {
+  if (!file || !/^image\/(jpeg|png|webp)$/i.test(file.type)) {
+    toast('Use JPG / PNG / WEBP only');
+    return;
+  }
+  const s = _azLoad();
+  if (s.references.length >= MAX_REFS) {
+    toast(`Max ${MAX_REFS} references — remove one first`);
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    resizeToBase64(e.target.result, 1024, 0.85).then(({ b64, mime }) => {
+      _azState.references.push({ data: b64, mime_type: mime, id: uid() });
+      _azSave();
+      renderRefStrip();
+      toast('Reference added');
+    });
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeReference(id) {
+  _azState.references = _azState.references.filter(r => r.id !== id);
+  _azSave();
+  renderRefStrip();
+}
+
+function renderRefStrip() {
+  const strip = document.getElementById('az-ref-strip');
+  if (!strip) return;
+  const refs = (_azState && _azState.references) || [];
+  if (!refs.length) { strip.innerHTML = ''; return; }
+  strip.innerHTML = refs.map(r => `
+    <div class="ref-thumb" data-testid="analyzer-ref-thumb-${r.id}">
+      <img src="data:${r.mime_type};base64,${r.data}" alt="reference">
+      <button class="ref-thumb-remove" onclick="removeReference('${r.id}')" data-testid="analyzer-ref-remove-${r.id}" title="remove">×</button>
+    </div>
+  `).join('');
+}
+
 async function executeVisual() {
   const s = _azLoad();
-  if (!s.generated) { alert('Generate the brief prompt first.'); return; }
+  // Use whatever is currently in the editable textarea (or fall back to stored)
+  const promptEl = document.getElementById('az-prompt-output');
+  const currentPrompt = (promptEl && promptEl.value) || s.generated;
+  if (!currentPrompt || !currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
   const status = document.getElementById('az-execute-status');
   const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
   btns.forEach(b => b.disabled = true);
   status.innerHTML = '<span style="color:var(--gold);">RENDERING — this can take 15-40s</span>';
   try {
+    const refs = (s.references || []).map(r => ({ data: r.data, mime_type: r.mime_type }));
     const res = await fetch(API_BASE + '/execute-visual', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: s.generated, refine: s.refine || '' })
+      body: JSON.stringify({ prompt: currentPrompt, refine: s.refine || '', references: refs })
     });
     const text = await res.text();
     if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`);
@@ -2176,16 +2375,19 @@ async function executeVisual() {
 
 async function executeTreatment() {
   const s = _azLoad();
-  if (!s.generated) { alert('Generate the brief prompt first.'); return; }
+  const promptEl = document.getElementById('az-prompt-output');
+  const currentPrompt = (promptEl && promptEl.value) || s.generated;
+  if (!currentPrompt || !currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
   const status = document.getElementById('az-execute-status');
   const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
   btns.forEach(b => b.disabled = true);
   status.innerHTML = '<span style="color:var(--gold);">DRAFTING TREATMENT —</span>';
   try {
+    const refs = (s.references || []).map(r => ({ data: r.data, mime_type: r.mime_type }));
     const res = await fetch(API_BASE + '/execute-treatment', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: s.generated, refine: s.refine || '' })
+      body: JSON.stringify({ prompt: currentPrompt, refine: s.refine || '', references: refs })
     });
     const text = await res.text();
     if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`);

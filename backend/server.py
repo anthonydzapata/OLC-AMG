@@ -288,10 +288,14 @@ async def generate_prompt(payload: GeneratePromptRequest):
 
 # ─── EXECUTE: GENERATE VISUAL DELIVERABLE (Gemini Nano Banana) ────────────────
 
+class ReferenceImage(BaseModel):
+    data: str  # base64 (no data: prefix)
+    mime_type: Optional[str] = "image/jpeg"
+
 class ExecuteVisualRequest(BaseModel):
     prompt: str
     refine: Optional[str] = ""  # optional iteration note
-    reference_image_b64: Optional[str] = None  # optional reference image (currently unused for first iteration; kept for forward compat)
+    references: Optional[List[ReferenceImage]] = None  # reference images to inform/edit
 
 @api_router.post("/execute-visual")
 async def execute_visual(payload: ExecuteVisualRequest):
@@ -305,6 +309,15 @@ async def execute_visual(payload: ExecuteVisualRequest):
     if payload.refine and payload.refine.strip():
         full_prompt += "\n\n## ITERATION NOTE\n" + payload.refine.strip()
 
+    refs = payload.references or []
+    if refs:
+        full_prompt += (
+            "\n\n## REFERENCE IMAGES ATTACHED\n"
+            "The attached image(s) are visual fidelity targets supplied by the creator. Use them as guidance for "
+            "the look, feel, and structural properties described above. Produce an ORIGINAL piece that satisfies "
+            "the directive while taking visual cues from these references. Do not name or invoke any creator, brand, or prior work."
+        )
+
     try:
         chat = LlmChat(
             api_key=api_key,
@@ -312,7 +325,17 @@ async def execute_visual(payload: ExecuteVisualRequest):
             system_message="You are a visual executor producing original imagery from structural directives.",
         ).with_model("gemini", "gemini-3.1-flash-image-preview").with_params(modalities=["image", "text"])
 
-        msg = UserMessage(text=full_prompt)
+        file_contents = []
+        for r in refs:
+            b64 = (r.data or "").strip()
+            if b64.startswith('data:'):
+                comma = b64.find(',')
+                if comma != -1:
+                    b64 = b64[comma + 1:]
+            if b64:
+                file_contents.append(ImageContent(image_base64=b64))
+
+        msg = UserMessage(text=full_prompt, file_contents=file_contents) if file_contents else UserMessage(text=full_prompt)
         text, images = await chat.send_message_multimodal_response(msg)
 
         if not images:
@@ -335,6 +358,7 @@ async def execute_visual(payload: ExecuteVisualRequest):
 class ExecuteTreatmentRequest(BaseModel):
     prompt: str
     refine: Optional[str] = ""
+    references: Optional[List[ReferenceImage]] = None  # reference images to inform the treatment
 
 TREATMENT_SYSTEM = (
     "You are a senior creative director for The Old Line Company. You receive a "
@@ -343,7 +367,10 @@ TREATMENT_SYSTEM = (
     "describe everything in original, mechanical, structural language. Do not name any "
     "designer, photographer, director, illustrator, studio, firm, brand, franchise, "
     "school, movement, decade, era, or country-of-origin. The directive describes HOW, never WHO. "
-    "Your treatment must be entirely original."
+    "Your treatment must be entirely original. If reference images are attached, treat them as "
+    "visual fidelity targets — describe the structural mechanics they exhibit and use those mechanics "
+    "as additional constraints in your treatment. Never name what or whom the references depict; "
+    "translate them into structural grammar."
 )
 
 @api_router.post("/execute-treatment")
@@ -357,6 +384,15 @@ async def execute_treatment(payload: ExecuteTreatmentRequest):
     full_prompt = payload.prompt.strip()
     if payload.refine and payload.refine.strip():
         full_prompt += "\n\n## ITERATION NOTE\n" + payload.refine.strip()
+
+    refs = payload.references or []
+    if refs:
+        full_prompt += (
+            "\n\n## REFERENCE IMAGES ATTACHED\n"
+            "Use the attached image(s) as visual fidelity targets. Read their structural mechanics and "
+            "fold them into the treatment as additional constraints. Do not name what is depicted."
+        )
+
     full_prompt += (
         "\n\n## YOUR TASK\n"
         "Produce the deliverable that fulfills the directive above. Format appropriately for the "
@@ -372,7 +408,18 @@ async def execute_treatment(payload: ExecuteTreatmentRequest):
             system_message=TREATMENT_SYSTEM,
         ).with_model("anthropic", "claude-4-sonnet-20250514")
 
-        response = await chat.send_message(UserMessage(text=full_prompt))
+        file_contents = []
+        for r in refs:
+            b64 = (r.data or "").strip()
+            if b64.startswith('data:'):
+                comma = b64.find(',')
+                if comma != -1:
+                    b64 = b64[comma + 1:]
+            if b64:
+                file_contents.append(ImageContent(image_base64=b64))
+
+        msg = UserMessage(text=full_prompt, file_contents=file_contents) if file_contents else UserMessage(text=full_prompt)
+        response = await chat.send_message(msg)
         return {"text": str(response)}
     except Exception as e:
         logger.exception("Execute treatment failed")
