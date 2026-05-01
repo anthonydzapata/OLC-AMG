@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="olc-build" content="2026-04-29-v3">
+<meta name="olc-build" content="2026-04-29-v4-direct-api">
 <title>OLC — The Old Line Company</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
 <style>
@@ -862,8 +862,46 @@
     <button onclick="showPanel('brief')">Brief Builder</button>
     <button onclick="showPanel('inspo')">Inspo Log</button>
     <button onclick="showPanel('thread')">The Thread</button>
+    <button onclick="openKeysModal()" data-testid="keys-open-btn" title="Manage API keys" style="background:var(--card);border:1px solid var(--gold-dim);color:var(--gold);">⚙ Keys</button>
   </nav>
 </header>
+
+<!-- KEYS MODAL -->
+<div id="keys-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;align-items:center;justify-content:center;padding:20px;" data-testid="keys-modal">
+  <div style="background:var(--card);border:1px solid var(--gold);max-width:520px;width:100%;padding:28px;max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
+      <div>
+        <div class="section-title" style="font-size:18px;">API Keys</div>
+        <div class="section-sub">Stored only in your browser's localStorage. Never sent anywhere except the provider.</div>
+      </div>
+      <button onclick="closeKeysModal()" style="background:none;border:none;color:var(--cream);font-size:22px;cursor:pointer;line-height:1;" data-testid="keys-close-btn">×</button>
+    </div>
+
+    <div class="form-group">
+      <label>Anthropic Key  <span style="color:var(--muted);font-weight:normal;text-transform:none;letter-spacing:0;">(text + image analysis · sk-ant-...)</span></label>
+      <input type="password" id="key-anthropic-input" placeholder="paste sk-ant-..." autocomplete="off" data-testid="key-anthropic-input">
+      <div id="key-anthropic-status" style="font-size:10px;letter-spacing:0.15em;color:var(--gold-dim);margin-top:4px;"></div>
+    </div>
+
+    <div class="form-group">
+      <label>OpenAI Key  <span style="color:var(--muted);font-weight:normal;text-transform:none;letter-spacing:0;">(image generation · sk-...)</span></label>
+      <input type="password" id="key-openai-input" placeholder="paste sk-..." autocomplete="off" data-testid="key-openai-input">
+      <div id="key-openai-status" style="font-size:10px;letter-spacing:0.15em;color:var(--gold-dim);margin-top:4px;"></div>
+    </div>
+
+    <div class="toolbar-row" style="margin-top:8px;">
+      <button class="btn btn-primary" onclick="saveKeysFromModal()" data-testid="keys-save-btn">Save Keys</button>
+      <button class="btn btn-sm" onclick="clearKeysFromModal()" data-testid="keys-clear-btn">Clear All Keys</button>
+    </div>
+
+    <div style="margin-top:18px;font-size:11px;color:var(--muted);line-height:1.6;letter-spacing:0.05em;">
+      <p style="margin:0 0 6px 0;color:var(--gold-dim);font-family:'Bebas Neue',sans-serif;letter-spacing:0.15em;font-size:13px;">WHERE DO I GET KEYS?</p>
+      <p style="margin:0 0 4px 0;"><b>Anthropic:</b> console.anthropic.com → API Keys → Create Key</p>
+      <p style="margin:0 0 4px 0;"><b>OpenAI:</b> platform.openai.com → API keys → Create new secret key</p>
+      <p style="margin:8px 0 0 0;color:var(--muted);font-style:italic;">Direct browser calls expose your keys to anyone who inspects the page. Use revocable keys with usage limits.</p>
+    </div>
+  </div>
+</div>
 
 <main>
 
@@ -1256,11 +1294,144 @@ const STORAGE_KEYS = {
   analyzer: 'olc_analyzer'
 };
 
-const API_BASE = 'https://ops-hub-64.preview.emergentagent.com/api';
+// ─── DIRECT-TO-PROVIDER API CALLS (no backend, no proxy) ──────────────────────
+// All AI calls go straight from your browser to Anthropic / OpenAI using keys
+// stored in localStorage. Never reroute through a backend or proxy.
+//   Text & vision  → https://api.anthropic.com/v1/messages
+//   Image gen      → https://api.openai.com/v1/images/generations
+
+function getKey(name) { return localStorage.getItem('olc_key_' + name) || ''; }
+function setKey(name, val) {
+  if (val) localStorage.setItem('olc_key_' + name, val);
+  else localStorage.removeItem('olc_key_' + name);
+}
+function maskKey(k) {
+  if (!k) return '(not set)';
+  if (k.length <= 14) return k.slice(0, 4) + '…' + k.slice(-2);
+  return k.slice(0, 8) + '…' + k.slice(-4);
+}
+
+const ANTHROPIC_MODEL = 'claude-sonnet-4-5-20250929';
+const OPENAI_IMAGE_MODEL = 'gpt-image-1';
+
+async function callAnthropic({ system, prompt, imageBase64, imageMime, maxTokens }) {
+  const key = getKey('anthropic');
+  if (!key) throw new Error('Anthropic key not set — open ⚙ Keys and paste your sk-ant-... key');
+  const userContent = [];
+  if (imageBase64) {
+    userContent.push({
+      type: 'image',
+      source: { type: 'base64', media_type: imageMime || 'image/jpeg', data: imageBase64 }
+    });
+  }
+  userContent.push({ type: 'text', text: prompt || '' });
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'x-api-key': key,
+      'anthropic-version': '2023-06-01',
+      'anthropic-dangerous-direct-browser-access': 'true',
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: ANTHROPIC_MODEL,
+      max_tokens: maxTokens || 4096,
+      ...(system ? { system } : {}),
+      messages: [{ role: 'user', content: userContent }]
+    })
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+  return text;
+}
+
+async function callOpenAIImage({ prompt, size }) {
+  const key = getKey('openai');
+  if (!key) throw new Error('OpenAI key not set — open ⚙ Keys and paste your sk-... key');
+  const res = await fetch('https://api.openai.com/v1/images/generations', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + key,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: OPENAI_IMAGE_MODEL,
+      prompt: prompt,
+      n: 1,
+      size: size || '1024x1024'
+    })
+  });
+  if (!res.ok) {
+    const body = await res.text();
+    throw new Error(`OpenAI ${res.status}: ${body.slice(0, 300)}`);
+  }
+  const data = await res.json();
+  const img = data.data && data.data[0];
+  if (img && img.b64_json) {
+    return { mime_type: 'image/png', data: img.b64_json };
+  }
+  if (img && img.url) {
+    const r2 = await fetch(img.url);
+    const blob = await r2.blob();
+    return await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve({ mime_type: blob.type || 'image/png', data: reader.result.split(',')[1] });
+      reader.onerror = reject;
+      reader.readAsDataURL(blob);
+    });
+  }
+  throw new Error('OpenAI returned no image data');
+}
 
 function load(key) {
   try { return JSON.parse(localStorage.getItem(key)) || []; }
   catch(e) { return []; }
+}
+
+// ─── KEYS MODAL ───────────────────────────────────────────────────────────────
+
+function openKeysModal() {
+  const modal = document.getElementById('keys-modal');
+  modal.style.display = 'flex';
+  // Show masked existing keys as the placeholder; do not pre-fill the inputs
+  document.getElementById('key-anthropic-input').value = '';
+  document.getElementById('key-openai-input').value = '';
+  document.getElementById('key-anthropic-status').textContent = 'Current: ' + maskKey(getKey('anthropic'));
+  document.getElementById('key-openai-status').textContent = 'Current: ' + maskKey(getKey('openai'));
+}
+
+function closeKeysModal() {
+  document.getElementById('keys-modal').style.display = 'none';
+}
+
+function saveKeysFromModal() {
+  const a = document.getElementById('key-anthropic-input').value.trim();
+  const o = document.getElementById('key-openai-input').value.trim();
+  let saved = 0;
+  if (a) { setKey('anthropic', a); saved++; }
+  if (o) { setKey('openai', o); saved++; }
+  if (saved === 0) {
+    toast('No new keys entered');
+    return;
+  }
+  document.getElementById('key-anthropic-input').value = '';
+  document.getElementById('key-openai-input').value = '';
+  document.getElementById('key-anthropic-status').textContent = 'Current: ' + maskKey(getKey('anthropic'));
+  document.getElementById('key-openai-status').textContent = 'Current: ' + maskKey(getKey('openai'));
+  toast('Keys saved');
+}
+
+function clearKeysFromModal() {
+  if (!confirm('Clear both API keys from this browser?')) return;
+  setKey('anthropic', '');
+  setKey('openai', '');
+  document.getElementById('key-anthropic-status').textContent = 'Current: (not set)';
+  document.getElementById('key-openai-status').textContent = 'Current: (not set)';
+  toast('Keys cleared');
 }
 
 function save(key, data) {
@@ -1355,21 +1526,12 @@ ${storyBlock}
 Respond in plain text with clear section headers. No markdown asterisks. Use — dashes and line breaks for structure.`;
 
   try {
-    const response = await fetch('https://ops-hub-64.preview.emergentagent.com/api/analyze-brief', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: prompt })
+    const text = await callAnthropic({
+      system: 'You are the internal creative intelligence for The Old Line Company (OLC).',
+      prompt: prompt,
+      maxTokens: 1500
     });
-
-    if (!response.ok) {
-      const errBody = await response.text();
-      throw new Error(`Server returned ${response.status}: ${errBody}`);
-    }
-
-    const data = await response.json();
-    const text = data.text || 'No response received.';
-
-    content.innerHTML = text
+    content.innerHTML = (text || 'No response received.')
       .split('\n')
       .map(line => {
         if (line.match(/^[0-9]\./) || line.match(/^(HOOK|STORY|PLATFORM)/i)) {
@@ -1381,7 +1543,7 @@ Respond in plain text with clear section headers. No markdown asterisks. Use —
       .join('');
 
   } catch(err) {
-    content.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}. Try again or check connection.</span>`;
+    content.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}.</span>`;
   }
 
   btn.textContent = '✦ Analyze';
@@ -1967,34 +2129,88 @@ function resizeToBase64(dataUrl, maxDim, quality) {
   });
 }
 
+const INSPO_SYSTEM = (
+  "You are a STRUCTURAL DESIGN ANALYST for The Old Line Company. Your output is "
+  + "consumed downstream by AI assistants that have aggressive content/IP guardrails. "
+  + "To prevent those guardrails from misreading your work as imitation of any specific "
+  + "creator, you operate under a hard rule: describe ONLY activity-level mechanics — "
+  + "geometry, ratios, color values, type properties, lighting setup, technique steps, "
+  + "equipment categories. NEVER name a designer, photographer, illustrator, director, "
+  + "studio, firm, brand, franchise, school, movement, decade, era, or country-of-origin. "
+  + "If a recognizable reference would be useful, translate it instead into its underlying "
+  + "structural grammar. Your job is to describe HOW, never WHO."
+);
+
+function _inspoPrompt(notes) {
+  return `Analyze the attached reference image and return STRICT JSON only — no markdown, no commentary.
+
+HARD RULES (violations are unacceptable):
+- DO NOT name any designer, illustrator, photographer, director, studio, firm, brand, franchise, IP, school, movement, decade, era, or country-of-origin shorthand.
+- DO NOT use phrases like "in the style of", "reminiscent of", "Bauhaus", "Art Deco", "1970s", "Japanese", "mid-century", "Saul Bass-style", etc.
+- DESCRIBE every observation in mechanical / structural / activity terms only:
+  * composition: angles, ratios, grid systems, focal points, axis, balance, negative-space distribution
+  * color: HSL ranges, value relationships, saturation behavior, palette structure (count + relationships, NOT named movements)
+  * form/type: weight, axis, contrast ratio, kerning behavior, geometric vs humanist construction
+  * technique: discrete steps, tools/categories (not brand names), surface treatments
+  * equipment: sensor format category, focal length category, lighting setup, exposure behavior — NEVER brand names
+- Each "option" is an alternative STRUCTURAL DIRECTION (different mechanics) the creator could take for a NEW piece, not a reference to anyone's prior work.
+- Be specific and measurable wherever possible.
+
+For each dimension provide:
+- "observed": a concise description in pure mechanics (1-3 sentences). State numbers, ratios, geometry.
+- "options": THREE distinct alternative structural directions (under 25 words each).
+
+Return EXACTLY this JSON shape and nothing else:
+
+{
+  "subject": {"observed": "...", "options": ["...", "...", "..."]},
+  "method": {"observed": "...", "options": ["...", "...", "..."]},
+  "composition": {"observed": "...", "options": ["...", "...", "..."]},
+  "structural_principles": {"observed": "...", "philosophy": "1-2 sentence read on the mechanical philosophy", "options": ["...", "...", "..."]},
+  "method_to_achieve": {"observed": "...", "options": ["...", "...", "..."]},
+  "technical_specs": {"observed": "...", "options": ["...", "...", "..."]}
+}
+
+Creator notes (bias the analysis if present): ${notes || '(none)'}
+`;
+}
+
+function _extractJson(text) {
+  // strip code fences
+  const fenced = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
+  if (fenced) text = fenced[1];
+  const m = text.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('No JSON object found in model response');
+  return JSON.parse(m[0]);
+}
+
 async function runImageAnalysis() {
   const s = _azLoad();
   if (!s.image_b64) { alert('Drop an image first.'); return; }
   const btn = document.getElementById('az-analyze-btn');
   const status = document.getElementById('az-status');
   btn.disabled = true; btn.textContent = '... analyzing';
-  status.textContent = 'GEMINI READING THE FRAME —';
+  status.textContent = 'CLAUDE READING THE FRAME —';
   try {
-    const res = await fetch(API_BASE + '/analyze-image', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ image_base64: s.image_b64, mime_type: s.mime, notes: s.bias || '' })
+    const text = await callAnthropic({
+      system: INSPO_SYSTEM,
+      prompt: _inspoPrompt(s.bias || ''),
+      imageBase64: s.image_b64,
+      imageMime: s.mime || 'image/jpeg',
+      maxTokens: 3000
     });
-    if (!res.ok) {
-      const t = await res.text();
-      throw new Error(`Server ${res.status}: ${t.slice(0, 200)}`);
-    }
-    const data = await res.json();
-    if (!data.parsed) {
+    let parsed;
+    try { parsed = _extractJson(text); }
+    catch (e) {
+      console.warn('Raw analyzer response:', text);
       status.innerHTML = '<span style="color:var(--red);">Could not parse model output. Raw response logged to console.</span>';
-      console.warn('Raw analyzer response:', data.raw);
       return;
     }
-    _azState.parsed = data.parsed;
+    _azState.parsed = parsed;
     _azState.choices = {};
     _azState.customs = {};
     _azSave();
-    renderBreakdown(data.parsed);
+    renderBreakdown(parsed);
     document.getElementById('az-breakdown').style.display = 'block';
     status.textContent = 'BREAKDOWN READY — pick directions below';
     document.getElementById('az-breakdown').scrollIntoView({ behavior: 'smooth' });
@@ -2082,80 +2298,136 @@ function _resolveChoice(f) {
   return '';
 }
 
+function _buildDirective({ title, subject, method, composition, structural_principles, method_to_achieve, technical_specs, notes }) {
+  const _s = v => (typeof v === 'string' ? v.trim() : '');
+  const t = _s(title) || 'Untitled directive';
+  return [
+    `# OPERATING DIRECTIVE — ${t}`,
+    ``,
+    `You are an executor producing a NEW, ORIGINAL piece. The structure below is a STRUCTURAL CONSTRAINT SET — composition geometry, color systems, type/form properties, technique mechanics. Within this structure an infinite number of valid choices exist. MAKE YOUR OWN CHOICES.`,
+    ``,
+    `READ THIS CAREFULLY:`,
+    `- The constraints describe HOW (mechanics), not WHO (no creator, firm, era is referenced).`,
+    `- Do not interpret any line below as 'in the style of' anyone or anything.`,
+    `- Your output must be entirely original. The constraints define the structural grammar; you create freely within it.`,
+    `- If a constraint feels under-defined, fill it with your own original choice. That is the point.`,
+    ``,
+    `## SUBJECT`,
+    _s(subject) || `(creator's choice within OLC voice)`,
+    ``,
+    `## METHOD (technique mechanics)`,
+    _s(method) || `(creator's choice)`,
+    ``,
+    `## COMPOSITION (geometry / axis / ratios / focal behavior)`,
+    _s(composition) || `(creator's choice)`,
+    ``,
+    `## STRUCTURAL & COMPOSITIONAL PRINCIPLES`,
+    _s(structural_principles) || `(creator's choice)`,
+    ``,
+    `## METHOD TO ACHIEVE THE LOOK (sequence of operations)`,
+    _s(method_to_achieve) || `(creator's choice)`,
+    ``,
+    `## TECHNICAL SPECS / SETTINGS (categories, never brand names)`,
+    _s(technical_specs) || `(creator's choice)`,
+    ``,
+    `## CREATOR NOTES`,
+    _s(notes) || `(none)`,
+    ``,
+    `## DELIVERY RULES`,
+    `- Honor the structural constraints as a grammar, not a costume.`,
+    `- Make and disclose your specific choices for any element that was creator's-choice.`,
+    `- Do not name or invoke any prior creator, brand, or work in your output or rationale.`,
+    `- Surface the choices you made and the mechanical reasoning behind them.`
+  ].join('\n');
+}
+
 async function generateDirective() {
   const s = _azLoad();
   if (!s.parsed) { alert('Run image analysis first.'); return; }
   const body = { title: s.title || '', notes: s.notes || '' };
   AZ_FIELDS.forEach(f => { body[f.key] = _resolveChoice(f) || ''; });
-  try {
-    const res = await fetch(API_BASE + '/generate-prompt', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    const text = await res.text();
-    if (!res.ok) {
-      throw new Error(`Server ${res.status}: ${text.slice(0, 160)}`);
-    }
-    let data;
-    try { data = JSON.parse(text); }
-    catch (e) {
-      console.error('Bad JSON from /generate-prompt:', text);
-      throw new Error('Server returned non-JSON: ' + text.slice(0, 120));
-    }
-    _azState.generated = data.prompt || '';
-    _azSave();
-    const out = document.getElementById('az-prompt-output');
-    out.value = _azState.generated;
-    out.style.display = 'block';
-    document.getElementById('az-prompt-hint').style.display = 'block';
-    document.getElementById('az-export-row').style.display = 'flex';
-    document.getElementById('az-execute-section').style.display = 'block';
-    out.scrollIntoView({ behavior: 'smooth' });
-    toast('Prompt generated — edit before executing if you like');
-  } catch (err) {
-    alert('Generate failed: ' + err.message);
-  }
+  _azState.generated = _buildDirective(body);
+  _azSave();
+  const out = document.getElementById('az-prompt-output');
+  out.value = _azState.generated;
+  out.style.display = 'block';
+  document.getElementById('az-prompt-hint').style.display = 'block';
+  document.getElementById('az-export-row').style.display = 'flex';
+  document.getElementById('az-execute-section').style.display = 'block';
+  out.scrollIntoView({ behavior: 'smooth' });
+  toast('Prompt generated — edit before executing if you like');
 }
 
 async function downloadDocx() {
   const s = _azLoad();
   if (!s.generated && !s.parsed) { alert('Generate the prompt first.'); return; }
-  const breakdown = {};
-  const choices = {};
-  AZ_FIELDS.forEach(f => {
+  const title = s.title || 'OLC Inspo Analysis';
+  const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+
+  const sections = AZ_FIELDS.map(f => {
     const node = (s.parsed || {})[f.key] || {};
-    breakdown[f.key] = node.observed || '';
-    choices[f.key] = _resolveChoice(f);
-  });
-  const body = {
-    title: s.title || 'OLC Inspo Analysis',
-    image_base64: s.image_b64 || null,
-    mime_type: s.mime || 'image/jpeg',
-    breakdown,
-    choices,
-    notes: s.notes || '',
-    generated_prompt: s.generated || ''
-  };
-  try {
-    const res = await fetch(API_BASE + '/export-docx', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) throw new Error('Server ' + res.status);
-    const blob = await res.blob();
-    const cd = res.headers.get('Content-Disposition') || '';
-    const m = cd.match(/filename="([^"]+)"/);
-    const filename = m ? m[1] : 'OLC_Inspo_Analysis.docx';
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-    setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-    toast('Downloaded');
-  } catch (err) {
-    alert('Download failed: ' + err.message);
-  }
+    const observed = (node.observed || '').trim();
+    const chosen = (_resolveChoice(f) || '').trim();
+    return `
+      <h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;margin-top:18pt;margin-bottom:6pt;">${_esc(f.label)}</h2>
+      <p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#333;"><b>Observed:</b> ${_esc(observed) || '—'}</p>
+      <p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#333;"><b>Direction chosen:</b> ${_esc(chosen) || '—'}</p>`;
+  }).join('');
+
+  const imgBlock = s.image_b64
+    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Reference</h2>
+       <img src="data:${s.mime || 'image/jpeg'};base64,${s.image_b64}" style="max-width:400px;display:block;" />`
+    : '';
+
+  const notesBlock = (s.notes || '').trim()
+    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Work Product Notes</h2>
+       <p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#333;white-space:pre-wrap;">${_esc(s.notes.trim())}</p>`
+    : '';
+
+  const promptBlock = (s.generated || '').trim()
+    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Brief Prompt (for executor)</h2>
+       <pre style="font-family:'Courier New',monospace;font-size:10pt;line-height:1.45;background:#f6f6f6;padding:10pt;border:1px solid #ddd;white-space:pre-wrap;">${_esc(s.generated.trim())}</pre>`
+    : '';
+
+  const treatmentBlock = (s.deliverable_text || '').trim()
+    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Generated Treatment</h2>
+       <div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#222;white-space:pre-wrap;">${_esc(s.deliverable_text.trim())}</div>`
+    : '';
+
+  const visualBlock = (s.deliverable_image && s.deliverable_image.data)
+    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Generated Visual</h2>
+       <img src="data:${s.deliverable_image.mime || 'image/png'};base64,${s.deliverable_image.data}" style="max-width:480px;display:block;" />`
+    : '';
+
+  const html = `<!DOCTYPE html>
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head>
+<meta charset="utf-8">
+<title>${_esc(title)}</title>
+<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
+<style>@page { size: 8.5in 11in; margin: 0.75in; }</style>
+</head>
+<body style="font-family:Calibri,Arial,sans-serif;color:#222;">
+<h1 style="font-family:Calibri,Arial,sans-serif;font-size:22pt;color:#111;margin-bottom:0;">${_esc(title)}</h1>
+<p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#666;font-style:italic;margin-top:4pt;">The Old Line Company  •  ${dateStr}</p>
+${imgBlock}
+<h1 style="font-family:Calibri,Arial,sans-serif;font-size:18pt;color:#111;margin-top:24pt;">Breakdown &amp; Direction</h1>
+${sections}
+${notesBlock}
+${promptBlock}
+${treatmentBlock}
+${visualBlock}
+</body></html>`;
+
+  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+  const safeTitle = title.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 60);
+  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
+  const filename = `${safeTitle}_${ts}.doc`;
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
+  toast('Downloaded — opens in Word/Google Docs');
 }
 
 function copyFormatted() {
@@ -2334,33 +2606,64 @@ function renderRefStrip() {
   `).join('');
 }
 
+const TREATMENT_SYSTEM = (
+  "You are a senior creative director for The Old Line Company. You receive a "
+  + "structural directive (mechanics only) and you produce a polished, original creative "
+  + "treatment / script / copy / shot list as the deliverable. You operate under a strict rule: "
+  + "describe everything in original, mechanical, structural language. Do not name any "
+  + "designer, photographer, director, illustrator, studio, firm, brand, franchise, "
+  + "school, movement, decade, era, or country-of-origin. The directive describes HOW, never WHO. "
+  + "Your treatment must be entirely original. If reference images are attached, treat them as "
+  + "visual fidelity targets — describe the structural mechanics they exhibit and use those mechanics "
+  + "as additional constraints in your treatment. Never name what or whom the references depict."
+);
+
+async function _claudeDescribeRefs(refs) {
+  // Use Claude vision to translate any reference images into structural-mechanics text.
+  // Returns a single block of text. If no refs, returns empty string. If the call fails,
+  // returns empty string (we don't want a vision-side hiccup to block the main call).
+  if (!refs || !refs.length) return '';
+  const blocks = [];
+  for (const r of refs) {
+    try {
+      const desc = await callAnthropic({
+        system: 'You translate reference images into pure structural mechanics — composition, ratios, color values, technique steps. Never name designers, brands, movements, eras. Output 4-6 lines, dense and specific.',
+        prompt: 'Describe the mechanics of this reference in structural terms only. No attribution, no proper nouns.',
+        imageBase64: r.data,
+        imageMime: r.mime_type || 'image/jpeg',
+        maxTokens: 600
+      });
+      if (desc && desc.trim()) blocks.push('- ' + desc.trim().replace(/\n+/g, '\n  '));
+    } catch (e) {
+      console.warn('Reference description failed:', e);
+    }
+  }
+  if (!blocks.length) return '';
+  return '\n\n## REFERENCE MECHANICS (translated from attached images)\n' + blocks.join('\n');
+}
+
 async function executeVisual() {
   const s = _azLoad();
-  // Use whatever is currently in the editable textarea (or fall back to stored)
   const promptEl = document.getElementById('az-prompt-output');
   const currentPrompt = (promptEl && promptEl.value) || s.generated;
   if (!currentPrompt || !currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
+  if (!getKey('openai')) { alert('OpenAI key not set — open ⚙ Keys and paste your sk-... key'); return; }
   const status = document.getElementById('az-execute-status');
   const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
   btns.forEach(b => b.disabled = true);
   status.innerHTML = '<span style="color:var(--gold);">RENDERING — this can take 15-40s</span>';
   try {
-    const refs = (s.references || []).map(r => ({ data: r.data, mime_type: r.mime_type }));
-    const res = await fetch(API_BASE + '/execute-visual', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: currentPrompt, refine: s.refine || '', references: refs })
-    });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`);
-    let data;
-    try { data = JSON.parse(text); }
-    catch (e) { throw new Error('Bad JSON: ' + text.slice(0, 120)); }
-    if (!data.images || !data.images.length) {
-      status.innerHTML = '<span style="color:var(--red);">No image returned. Model said: ' + (data.text || '(empty)').slice(0, 200) + '</span>';
-      return;
+    const refs = s.references || [];
+    let refBlock = '';
+    if (refs.length) {
+      status.innerHTML = '<span style="color:var(--gold);">READING REFERENCES (Claude vision)…</span>';
+      refBlock = await _claudeDescribeRefs(refs);
+      status.innerHTML = '<span style="color:var(--gold);">RENDERING via OpenAI image gen…</span>';
     }
-    const img = data.images[0];
+    const refineBlock = (s.refine && s.refine.trim()) ? ('\n\n## ITERATION NOTE\n' + s.refine.trim()) : '';
+    const fullPrompt = (currentPrompt + refineBlock + refBlock).slice(0, 32000);
+
+    const img = await callOpenAIImage({ prompt: fullPrompt, size: '1024x1024' });
     _azState.deliverable_image = { mime: img.mime_type, data: img.data };
     _azSave();
     const el = document.getElementById('az-result-img');
@@ -2382,23 +2685,55 @@ async function executeTreatment() {
   const promptEl = document.getElementById('az-prompt-output');
   const currentPrompt = (promptEl && promptEl.value) || s.generated;
   if (!currentPrompt || !currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
+  if (!getKey('anthropic')) { alert('Anthropic key not set — open ⚙ Keys and paste your sk-ant-... key'); return; }
   const status = document.getElementById('az-execute-status');
   const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
   btns.forEach(b => b.disabled = true);
   status.innerHTML = '<span style="color:var(--gold);">DRAFTING TREATMENT —</span>';
   try {
-    const refs = (s.references || []).map(r => ({ data: r.data, mime_type: r.mime_type }));
-    const res = await fetch(API_BASE + '/execute-treatment', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt: currentPrompt, refine: s.refine || '', references: refs })
-    });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`Server ${res.status}: ${text.slice(0, 200)}`);
-    let data;
-    try { data = JSON.parse(text); }
-    catch (e) { throw new Error('Bad JSON: ' + text.slice(0, 120)); }
-    _azState.deliverable_text = data.text || '';
+    const refs = s.references || [];
+    const refineBlock = (s.refine && s.refine.trim()) ? ('\n\n## ITERATION NOTE\n' + s.refine.trim()) : '';
+    let refsBlock = '';
+    if (refs.length) {
+      refsBlock = '\n\n## REFERENCE IMAGES ATTACHED\nThe attached image(s) are visual fidelity targets. Read their structural mechanics and fold them into the treatment as additional constraints. Do not name what is depicted.';
+    }
+    const taskBlock = '\n\n## YOUR TASK\nProduce the deliverable that fulfills the directive above. Format appropriately for the implied medium (poster spec, video shot list, copy block, script, etc.). Use clear section headers. Disclose your specific choices for under-defined elements and the mechanical reasoning behind them. Do not name any creator, firm, era, or prior work.';
+    const fullPrompt = currentPrompt + refineBlock + refsBlock + taskBlock;
+
+    let text;
+    if (refs.length === 0) {
+      text = await callAnthropic({ system: TREATMENT_SYSTEM, prompt: fullPrompt, maxTokens: 4000 });
+    } else {
+      // Claude supports multiple images in a single message via the user content array.
+      const key = getKey('anthropic');
+      const userContent = refs.map(r => ({
+        type: 'image',
+        source: { type: 'base64', media_type: r.mime_type || 'image/jpeg', data: r.data }
+      }));
+      userContent.push({ type: 'text', text: fullPrompt });
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'x-api-key': key,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          model: ANTHROPIC_MODEL,
+          max_tokens: 4000,
+          system: TREATMENT_SYSTEM,
+          messages: [{ role: 'user', content: userContent }]
+        })
+      });
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+      }
+      const data = await res.json();
+      text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
+    }
+    _azState.deliverable_text = text || '';
     _azSave();
     const t = document.getElementById('az-deliverable-text');
     t.textContent = _azState.deliverable_text;
@@ -2438,6 +2773,10 @@ function copyTreatment() {
 
 document.getElementById('asset-modal').addEventListener('click', function(e) {
   if (e.target === this) closeModal();
+});
+
+document.getElementById('keys-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeKeysModal();
 });
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
