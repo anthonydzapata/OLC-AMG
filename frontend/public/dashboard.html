@@ -6,844 +6,265 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="olc-build" content="2026-04-29-v4-direct-api">
+<meta name="olc-build" content="2026-05-01-v5-telegram">
 <title>OLC — The Old Line Company</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --black: #0a0a08;
-    --offwhite: #f0ead8;
-    --cream: #e8dfc8;
-    --gold: #c9a84c;
-    --gold-dim: #7a6228;
-    --red: #c0392b;
-    --green: #2d6a4f;
-    --blue: #1a3a5c;
-    --muted: #4a4840;
-    --border: #2a2820;
-    --card: #111108;
-    --tag-bg: #1e1d15;
-  }
-
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-
-  body {
-    background: var(--black);
-    color: var(--offwhite);
-    font-family: 'DM Mono', monospace;
-    font-size: 13px;
-    min-height: 100vh;
-    overflow-x: hidden;
-  }
-
-  /* NOISE OVERLAY */
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
-    pointer-events: none;
-    z-index: 9999;
-    opacity: 0.6;
-  }
-
-  /* HEADER */
-  header {
-    border-bottom: 1px solid var(--border);
-    padding: 20px 32px;
-    display: flex;
-    align-items: baseline;
-    gap: 24px;
-    position: sticky;
-    top: 0;
-    background: var(--black);
-    z-index: 100;
-  }
-
-  .logo {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 28px;
-    letter-spacing: 0.12em;
-    color: var(--gold);
-    line-height: 1;
-  }
-
-  .logo span {
-    color: var(--offwhite);
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    letter-spacing: 0.25em;
-    margin-left: 12px;
-    opacity: 0.5;
-    vertical-align: middle;
-  }
-
-  nav {
-    display: flex;
-    gap: 0;
-    margin-left: auto;
-  }
-
-  nav button {
-    background: none;
-    border: none;
-    color: var(--muted);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    padding: 6px 16px;
-    cursor: pointer;
-    text-transform: uppercase;
-    border-bottom: 2px solid transparent;
-    transition: all 0.15s;
-  }
-
-  nav button.active {
-    color: var(--gold);
-    border-bottom-color: var(--gold);
-  }
-
-  nav button:hover:not(.active) {
-    color: var(--offwhite);
-  }
-
-  /* MAIN */
-  main {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 32px;
-  }
-
-  .panel { display: none; }
-  .panel.active { display: block; }
-
-  /* SECTION HEADERS */
-  .section-header {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-  }
-
-  .section-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 22px;
-    letter-spacing: 0.1em;
-    color: var(--gold);
-  }
-
-  .section-sub {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-  }
-
-  /* BUTTONS */
-  .btn {
-    background: none;
-    border: 1px solid var(--gold-dim);
-    color: var(--gold);
-    font-family: 'DM Mono', monospace;
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    padding: 8px 18px;
-    cursor: pointer;
-    text-transform: uppercase;
-    transition: all 0.15s;
-  }
-
-  .btn:hover {
-    background: var(--gold);
-    color: var(--black);
-  }
-
-  .btn-sm {
-    padding: 4px 10px;
-    font-size: 10px;
-  }
-
-  .btn-danger {
-    border-color: #5a1a1a;
-    color: #c06060;
-  }
-
-  .btn-danger:hover {
-    background: var(--red);
-    color: var(--offwhite);
-    border-color: var(--red);
-  }
-
-  /* CARDS */
-  .card-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-    gap: 16px;
-  }
-
-  .card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 20px;
-    position: relative;
-    transition: border-color 0.15s;
-  }
-
-  .card:hover {
-    border-color: var(--gold-dim);
-  }
-
-  .card-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 16px;
-    color: var(--offwhite);
-    margin-bottom: 8px;
-    line-height: 1.3;
-  }
-
-  .card-meta {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-bottom: 12px;
-    text-transform: uppercase;
-  }
-
-  .card-body {
-    font-size: 12px;
-    color: #8a8470;
-    line-height: 1.6;
-    margin-bottom: 14px;
-  }
-
-  .card-footer {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    flex-wrap: wrap;
-  }
-
-  /* STATUS BADGES */
-  .status {
-    font-size: 9px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    padding: 3px 8px;
-    border: 1px solid;
-    font-family: 'DM Mono', monospace;
-  }
-
-  .status-idea { color: #6a8faf; border-color: #1a3a5c; background: #0d1e2e; }
-  .status-brief { color: #a08030; border-color: #5a4a18; background: #1e1808; }
-  .status-production { color: #8fbf6a; border-color: #3a5a20; background: #141f0a; }
-  .status-review { color: #af8f6a; border-color: #5a3a18; background: #1e1208; }
-  .status-approved { color: #6aaf8f; border-color: #1a5a3a; background: #081e14; }
-  .status-scheduled { color: #9f6aaf; border-color: #4a1a5a; background: #1a0820; }
-  .status-live { color: #c9a84c; border-color: #7a6228; background: #1e1808; }
-  .status-analytics { color: #af6a6a; border-color: #5a1a1a; background: #200808; }
-
-  /* TAGS */
-  .tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
-
-  .tag {
-    font-size: 9px;
-    background: var(--tag-bg);
-    border: 1px solid var(--border);
-    color: var(--muted);
-    padding: 2px 7px;
-    letter-spacing: 0.1em;
-    text-transform: uppercase;
-  }
-
-  .tag-platform { border-color: #1a3a5c; color: #6a8faf; }
-  .tag-format { border-color: #2d3a1a; color: #8a9f6a; }
-
-  /* FORMS */
-  .form-panel {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 28px;
-    margin-bottom: 32px;
-  }
-
-  .form-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-
-  .form-group {
-    margin-bottom: 16px;
-  }
-
-  .form-group label {
-    display: block;
-    font-size: 10px;
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 6px;
-  }
-
-  .form-group input,
-  .form-group textarea,
-  .form-group select {
-    width: 100%;
-    background: #0d0d0a;
-    border: 1px solid var(--border);
-    color: var(--offwhite);
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    padding: 10px 12px;
-    outline: none;
-    transition: border-color 0.15s;
-    appearance: none;
-  }
-
-  .form-group input:focus,
-  .form-group textarea:focus,
-  .form-group select:focus {
-    border-color: var(--gold-dim);
-  }
-
-  .form-group textarea {
-    resize: vertical;
-    min-height: 80px;
-    line-height: 1.6;
-  }
-
-  .form-group select option {
-    background: #0d0d0a;
-  }
-
-  .form-actions {
-    display: flex;
-    gap: 12px;
-    margin-top: 8px;
-  }
-
-  /* PIPELINE VIEW */
-  .pipeline {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 12px;
-    overflow-x: auto;
-  }
-
-  .pipeline-col {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 14px;
-    min-height: 200px;
-  }
-
-  .pipeline-col-header {
-    font-size: 9px;
-    letter-spacing: 0.25em;
-    text-transform: uppercase;
-    color: var(--muted);
-    margin-bottom: 12px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--border);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .pipeline-count {
-    background: var(--tag-bg);
-    border: 1px solid var(--border);
-    padding: 1px 6px;
-    font-size: 9px;
-    color: var(--gold);
-  }
-
-  .pipeline-item {
-    background: #0d0d0a;
-    border: 1px solid var(--border);
-    padding: 10px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    transition: border-color 0.15s;
-  }
-
-  .pipeline-item:hover {
-    border-color: var(--gold-dim);
-  }
-
-  .pipeline-item-title {
-    font-size: 11px;
-    color: var(--offwhite);
-    line-height: 1.4;
-    margin-bottom: 4px;
-  }
-
-  .pipeline-item-meta {
-    font-size: 9px;
-    color: var(--muted);
-    text-transform: uppercase;
-    letter-spacing: 0.1em;
-  }
-
-  /* BRIEF OUTPUT */
-  .brief-output {
-    background: #0d0d0a;
-    border: 1px solid var(--gold-dim);
-    padding: 24px;
-    margin-top: 24px;
-    display: none;
-    font-size: 12px;
-    line-height: 1.8;
-    color: var(--offwhite);
-  }
-
-  .brief-output.visible { display: block; }
-
-  .brief-output h3 {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    color: var(--gold);
-    letter-spacing: 0.1em;
-    margin-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 8px;
-  }
-
-  .brief-section {
-    margin-bottom: 14px;
-  }
-
-  .brief-label {
-    font-size: 9px;
-    color: var(--gold-dim);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  .brief-value {
-    color: var(--offwhite);
-    font-style: italic;
-    font-family: 'Playfair Display', serif;
-    font-size: 13px;
-  }
-
-  /* INSPIRATION LOG */
-  .inspo-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 14px;
-  }
-
-  .inspo-card {
-    background: var(--card);
-    border: 1px solid var(--border);
-    padding: 16px;
-    cursor: pointer;
-    transition: border-color 0.15s;
-  }
-
-  .inspo-card:hover { border-color: var(--gold-dim); }
-
-  .inspo-card-title {
-    font-family: 'Playfair Display', serif;
-    font-size: 14px;
-    margin-bottom: 6px;
-  }
-
-  .inspo-card-note {
-    font-size: 11px;
-    color: var(--muted);
-    line-height: 1.5;
-    margin-bottom: 10px;
-  }
-
-  /* NARRATIVE THREAD */
-  .thread-item {
-    border-left: 2px solid var(--gold-dim);
-    padding: 12px 16px;
-    margin-bottom: 14px;
-    background: var(--card);
-    position: relative;
-  }
-
-  .thread-item::before {
-    content: '';
-    position: absolute;
-    left: -5px;
-    top: 16px;
-    width: 8px;
-    height: 8px;
-    background: var(--gold);
-    border-radius: 50%;
-  }
-
-  .thread-date {
-    font-size: 9px;
-    color: var(--gold-dim);
-    letter-spacing: 0.2em;
-    text-transform: uppercase;
-    margin-bottom: 4px;
-  }
-
-  .thread-text {
-    font-size: 12px;
-    color: var(--offwhite);
-    line-height: 1.6;
-    font-style: italic;
-    font-family: 'Playfair Display', serif;
-  }
-
-  /* MODAL */
-  .modal-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.85);
-    z-index: 1000;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    padding: 20px;
-  }
-
-  .modal-overlay.open { display: flex; }
-
-  .modal {
-    background: var(--card);
-    border: 1px solid var(--gold-dim);
-    padding: 28px;
-    max-width: 600px;
-    width: 100%;
-    max-height: 85vh;
-    overflow-y: auto;
-    position: relative;
-  }
-
-  .modal-title {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 20px;
-    color: var(--gold);
-    letter-spacing: 0.1em;
-    margin-bottom: 20px;
-  }
-
-  .modal-close {
-    position: absolute;
-    top: 16px;
-    right: 16px;
-    background: none;
-    border: none;
-    color: var(--muted);
-    cursor: pointer;
-    font-size: 18px;
-    line-height: 1;
-    font-family: monospace;
-  }
-
-  .modal-close:hover { color: var(--offwhite); }
-
-  /* EMPTY STATE */
-  .empty {
-    text-align: center;
-    padding: 48px 24px;
-    color: var(--muted);
-    font-size: 11px;
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    border: 1px dashed var(--border);
-  }
-
-  /* DIVIDER */
-  .divider {
-    border: none;
-    border-top: 1px solid var(--border);
-    margin: 28px 0;
-  }
-
-  /* STATUS SELECT inline */
-  .status-select {
-    background: none;
-    border: none;
-    font-family: 'DM Mono', monospace;
-    font-size: 10px;
-    cursor: pointer;
-    padding: 0;
-    color: inherit;
-  }
-
-  /* TICKER */
-  .ticker-bar {
-    background: var(--gold);
-    color: var(--black);
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 13px;
-    letter-spacing: 0.2em;
-    padding: 4px 0;
-    overflow: hidden;
-    white-space: nowrap;
-  }
-
-  .ticker-inner {
-    display: inline-block;
-    animation: ticker 30s linear infinite;
-  }
-
-  @keyframes ticker {
-    from { transform: translateX(100vw); }
-    to { transform: translateX(-100%); }
-  }
-
-  /* INSPO ANALYZER */
-  .drop-zone {
-    border: 2px dashed var(--gold-dim);
-    background: var(--card);
-    padding: 40px 24px;
-    text-align: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    position: relative;
-  }
-  .drop-zone:hover, .drop-zone.dragover {
-    border-color: var(--gold);
-    background: rgba(201,168,76,0.05);
-  }
-  .drop-zone-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 18px;
-    color: var(--gold);
-    letter-spacing: 0.15em;
-    margin-bottom: 8px;
-  }
-  .drop-zone-sub {
-    font-size: 11px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-  }
-  .drop-zone input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer;
-  }
-  .image-preview {
-    max-width: 280px;
-    max-height: 280px;
-    border: 1px solid var(--border);
-    margin: 16px auto 0;
-    display: block;
-  }
-
-  .breakdown-block {
-    border: 1px solid var(--border);
-    background: var(--card);
-    padding: 18px 20px;
-    margin-bottom: 16px;
-  }
-  .breakdown-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 13px;
-    color: var(--gold);
-    letter-spacing: 0.18em;
-    margin-bottom: 10px;
-    border-bottom: 1px solid var(--border);
-    padding-bottom: 6px;
-  }
-  .breakdown-observed {
-    font-size: 12px;
-    color: var(--cream);
-    line-height: 1.6;
-    margin-bottom: 14px;
-    font-style: italic;
-    opacity: 0.85;
-  }
-  .breakdown-philosophy {
-    font-size: 11px;
-    color: var(--gold-dim);
-    line-height: 1.55;
-    margin-bottom: 14px;
-    padding: 8px 12px;
-    border-left: 2px solid var(--gold-dim);
-  }
-  .choice-row {
-    display: flex;
-    gap: 10px;
-    align-items: flex-start;
-    padding: 8px 10px;
-    margin-bottom: 4px;
-    cursor: pointer;
-    transition: background 0.15s;
-  }
-  .choice-row:hover { background: rgba(201,168,76,0.04); }
-  .choice-row input[type=radio] {
-    margin-top: 4px;
-    accent-color: var(--gold);
-  }
-  .choice-row.selected { background: rgba(201,168,76,0.08); }
-  .choice-text {
-    font-size: 12px;
-    color: var(--offwhite);
-    line-height: 1.55;
-    flex: 1;
-  }
-  .choice-tag {
-    display: inline-block;
-    font-size: 9px;
-    color: var(--gold-dim);
-    letter-spacing: 0.18em;
-    text-transform: uppercase;
-    margin-right: 6px;
-  }
-  .breakdown-custom {
-    width: 100%;
-    margin-top: 8px;
-    background: var(--black);
-    color: var(--offwhite);
-    border: 1px solid var(--border);
-    padding: 8px 10px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    min-height: 50px;
-    resize: vertical;
-  }
-  .breakdown-custom:focus {
-    border-color: var(--gold-dim);
-    outline: none;
-  }
-
-  .prompt-output {
-    background: var(--black);
-    border: 1px solid var(--gold-dim);
-    color: var(--cream);
-    padding: 20px;
-    font-family: 'DM Mono', monospace;
-    font-size: 12px;
-    line-height: 1.65;
-    white-space: pre-wrap;
-    margin-top: 16px;
-    max-height: 500px;
-    overflow-y: auto;
-  }
-  textarea.prompt-output {
-    width: 100%;
-    min-height: 240px;
-    resize: vertical;
-    box-sizing: border-box;
-    overflow-y: auto;
-  }
-  textarea.prompt-output:focus {
-    outline: none;
-    border-color: var(--gold);
-  }
-  .prompt-output-hint {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.15em;
-    text-transform: uppercase;
-    margin-top: 6px;
-    text-align: right;
-  }
-
-  .ref-zone {
-    border: 1px dashed var(--gold-dim);
-    background: var(--card);
-    padding: 18px 14px;
-    text-align: center;
-    cursor: pointer;
-    position: relative;
-    margin-top: 8px;
-    transition: all 0.15s;
-  }
-  .ref-zone:hover, .ref-zone.dragover {
-    border-color: var(--gold);
-    background: rgba(201,168,76,0.05);
-  }
-  .ref-zone-label {
-    font-family: 'Bebas Neue', sans-serif;
-    font-size: 13px;
-    color: var(--gold);
-    letter-spacing: 0.15em;
-  }
-  .ref-zone-sub {
-    font-size: 10px;
-    color: var(--muted);
-    letter-spacing: 0.1em;
-    margin-top: 4px;
-  }
-  .ref-zone input[type=file] {
-    position: absolute; inset: 0; opacity: 0; cursor: pointer;
-  }
-
-  .ref-strip {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 12px;
-  }
-  .ref-thumb {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    border: 1px solid var(--border);
-    background: var(--card);
-    overflow: hidden;
-  }
-  .ref-thumb img {
-    width: 100%; height: 100%;
-    object-fit: cover;
-  }
-  .ref-thumb-remove {
-    position: absolute;
-    top: 2px; right: 2px;
-    width: 18px; height: 18px;
-    border-radius: 50%;
-    background: var(--red);
-    color: var(--offwhite);
-    border: 1px solid var(--black);
-    cursor: pointer;
-    font-size: 11px;
-    font-family: 'DM Mono', monospace;
-    line-height: 1;
-    padding: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .toolbar-row {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-    margin-top: 16px;
-  }
-
-  .toast {
-    position: fixed;
-    bottom: 24px;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--card);
-    border: 1px solid var(--gold);
-    color: var(--gold);
-    padding: 10px 18px;
-    font-family: 'Bebas Neue', sans-serif;
-    letter-spacing: 0.15em;
-    font-size: 13px;
-    z-index: 2000;
-    opacity: 0;
-    transition: opacity 0.2s;
-    pointer-events: none;
-  }
-  .toast.show { opacity: 1; }
-
-  /* RESPONSIVE */
-  @media (max-width: 768px) {
-    main { padding: 16px; }
-    header { padding: 16px; flex-wrap: wrap; }
-    .form-row { grid-template-columns: 1fr; }
-    .pipeline { grid-template-columns: 1fr 1fr; }
-    nav button { padding: 6px 10px; font-size: 10px; }
-    .card-grid { grid-template-columns: 1fr; }
-  }
+:root {
+  --black: #0a0a08;
+  --offwhite: #f0ead8;
+  --cream: #e8dfc8;
+  --gold: #c9a84c;
+  --gold-dim: #7a6228;
+  --red: #c0392b;
+  --green: #2d6a4f;
+  --blue: #1a3a5c;
+  --muted: #4a4840;
+  --border: #2a2820;
+  --card: #111108;
+  --tag-bg: #1e1d15;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--black);
+  color: var(--offwhite);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.6;
+}
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 20px 32px;
+  display: flex;
+  align-items: baseline;
+  gap: 24px;
+  position: sticky;
+  top: 0;
+  background: var(--black);
+  z-index: 100;
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 0.12em;
+  color: var(--gold);
+  line-height: 1;
+}
+.logo span {
+  color: var(--offwhite);
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.25em;
+  margin-left: 12px;
+  opacity: 0.5;
+  vertical-align: middle;
+}
+nav { display: flex; gap: 0; margin-left: auto; align-items: center; }
+nav button {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  padding: 6px 16px;
+  cursor: pointer;
+  text-transform: uppercase;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+nav button.active { color: var(--gold); border-bottom-color: var(--gold); }
+nav button:hover:not(.active) { color: var(--offwhite); }
+.keys-btn {
+  margin-left: 12px;
+  border-left: 1px solid var(--border) !important;
+  padding-left: 20px !important;
+  border-bottom: none !important;
+  opacity: 0.6;
+}
+.keys-btn:hover { opacity: 1 !important; }
+main { max-width: 1200px; margin: 0 auto; padding: 32px; }
+.panel { display: none; }
+.panel.active { display: block; }
+.section-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+}
+.section-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px;
+  letter-spacing: 0.1em;
+  color: var(--gold);
+}
+.section-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.2em; text-transform: uppercase; }
+.btn {
+  background: none;
+  border: 1px solid var(--gold-dim);
+  color: var(--gold);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.15em;
+  padding: 8px 18px;
+  cursor: pointer;
+  text-transform: uppercase;
+  transition: all 0.15s;
+}
+.btn:hover { background: var(--gold); color: var(--black); }
+.btn-sm { padding: 4px 10px; font-size: 10px; }
+.btn-danger { border-color: #5a1a1a; color: #c06060; }
+.btn-danger:hover { background: var(--red); color: var(--offwhite); border-color: var(--red); }
+.card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; }
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  padding: 20px;
+  position: relative;
+  transition: border-color 0.15s;
+}
+.card:hover { border-color: var(--gold-dim); }
+.card-title { font-family: 'Playfair Display', serif; font-size: 16px; color: var(--offwhite); margin-bottom: 8px; line-height: 1.3; }
+.card-meta { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; margin-bottom: 12px; text-transform: uppercase; }
+.card-body { font-size: 12px; color: #8a8470; line-height: 1.6; margin-bottom: 14px; }
+.card-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.status { font-size: 9px; letter-spacing: 0.2em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; font-family: 'DM Mono', monospace; }
+.status-idea { color: #6a8faf; border-color: #1a3a5c; background: #0d1e2e; }
+.status-brief { color: #a08030; border-color: #5a4a18; background: #1e1808; }
+.status-production { color: #8fbf6a; border-color: #3a5a20; background: #141f0a; }
+.status-review { color: #af8f6a; border-color: #5a3a18; background: #1e1208; }
+.status-approved { color: #6aaf8f; border-color: #1a5a3a; background: #081e14; }
+.status-scheduled { color: #9f6aaf; border-color: #4a1a5a; background: #1a0820; }
+.status-live { color: #c9a84c; border-color: #7a6228; background: #1e1808; }
+.status-analytics { color: #af6a6a; border-color: #5a1a1a; background: #200808; }
+.tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+.tag { font-size: 9px; background: var(--tag-bg); border: 1px solid var(--border); color: var(--muted); padding: 2px 7px; letter-spacing: 0.1em; text-transform: uppercase; }
+.tag-platform { border-color: #1a3a5c; color: #6a8faf; }
+.tag-format { border-color: #2d3a1a; color: #8a9f6a; }
+.form-panel { background: var(--card); border: 1px solid var(--border); padding: 28px; margin-bottom: 32px; }
+.form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.form-group { margin-bottom: 16px; }
+.form-group label { display: block; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px; }
+.form-group input, .form-group textarea, .form-group select {
+  width: 100%;
+  background: #0d0d0a;
+  border: 1px solid var(--border);
+  color: var(--offwhite);
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  appearance: none;
+}
+.form-group input:focus, .form-group textarea:focus, .form-group select:focus { border-color: var(--gold-dim); }
+.form-group textarea { resize: vertical; min-height: 80px; line-height: 1.6; }
+.form-group select option { background: #0d0d0a; }
+.form-actions { display: flex; gap: 12px; margin-top: 8px; flex-wrap: wrap; }
+.pipeline { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; overflow-x: auto; }
+.pipeline-col { background: var(--card); border: 1px solid var(--border); padding: 14px; min-height: 200px; }
+.pipeline-col-header { font-size: 9px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+.pipeline-count { background: var(--tag-bg); border: 1px solid var(--border); padding: 1px 6px; font-size: 9px; color: var(--gold); }
+.pipeline-item { background: #0d0d0a; border: 1px solid var(--border); padding: 10px; margin-bottom: 8px; cursor: pointer; transition: border-color 0.15s; }
+.pipeline-item:hover { border-color: var(--gold-dim); }
+.pipeline-item-title { font-size: 11px; color: var(--offwhite); line-height: 1.4; margin-bottom: 4px; }
+.pipeline-item-meta { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+.brief-output { background: #0d0d0a; border: 1px solid var(--gold-dim); padding: 24px; margin-top: 24px; display: none; font-size: 12px; line-height: 1.8; color: var(--offwhite); }
+.brief-output.visible { display: block; }
+.brief-output h3 { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 16px; border-bottom: 1px solid var(--border); padding-bottom: 8px; }
+.brief-section { margin-bottom: 14px; }
+.brief-label { font-size: 9px; color: var(--gold-dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px; }
+.brief-value { color: var(--offwhite); font-style: italic; font-family: 'Playfair Display', serif; font-size: 13px; }
+.inspo-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+.inspo-card { background: var(--card); border: 1px solid var(--border); padding: 16px; cursor: pointer; transition: border-color 0.15s; }
+.inspo-card:hover { border-color: var(--gold-dim); }
+.inspo-card-title { font-family: 'Playfair Display', serif; font-size: 14px; margin-bottom: 6px; }
+.inspo-card-note { font-size: 11px; color: var(--muted); line-height: 1.5; margin-bottom: 10px; }
+.thread-item { border-left: 2px solid var(--gold-dim); padding: 12px 16px; margin-bottom: 14px; background: var(--card); position: relative; }
+.thread-item::before { content: ''; position: absolute; left: -5px; top: 16px; width: 8px; height: 8px; background: var(--gold); border-radius: 50%; }
+.thread-date { font-size: 9px; color: var(--gold-dim); letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 4px; }
+.thread-text { font-size: 12px; color: var(--offwhite); line-height: 1.6; font-style: italic; font-family: 'Playfair Display', serif; }
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 1000; display: none; align-items: center; justify-content: center; padding: 20px; }
+.modal-overlay.open { display: flex; }
+.modal { background: var(--card); border: 1px solid var(--gold-dim); padding: 28px; max-width: 600px; width: 100%; max-height: 85vh; overflow-y: auto; position: relative; }
+.modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 20px; color: var(--gold); letter-spacing: 0.1em; margin-bottom: 20px; }
+.modal-close { position: absolute; top: 16px; right: 16px; background: none; border: none; color: var(--muted); cursor: pointer; font-size: 18px; line-height: 1; font-family: monospace; }
+.modal-close:hover { color: var(--offwhite); }
+.empty { text-align: center; padding: 48px 24px; color: var(--muted); font-size: 11px; letter-spacing: 0.15em; text-transform: uppercase; border: 1px dashed var(--border); }
+.divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+.ticker-bar { background: var(--gold); color: var(--black); font-family: 'Bebas Neue', sans-serif; font-size: 13px; letter-spacing: 0.2em; padding: 4px 0; overflow: hidden; white-space: nowrap; }
+.ticker-inner { display: inline-block; animation: ticker 30s linear infinite; }
+@keyframes ticker { from { transform: translateX(100vw); } to { transform: translateX(-100%); } }
+.drop-zone { border: 2px dashed var(--gold-dim); background: var(--card); padding: 40px 24px; text-align: center; cursor: pointer; transition: all 0.2s; position: relative; }
+.drop-zone:hover, .drop-zone.dragover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+.drop-zone-label { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--gold); letter-spacing: 0.15em; margin-bottom: 8px; }
+.drop-zone-sub { font-size: 11px; color: var(--muted); letter-spacing: 0.1em; }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.image-preview { max-width: 280px; max-height: 280px; border: 1px solid var(--border); margin: 16px auto 0; display: block; }
+.breakdown-block { border: 1px solid var(--border); background: var(--card); padding: 18px 20px; margin-bottom: 16px; }
+.breakdown-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--gold); letter-spacing: 0.18em; margin-bottom: 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.breakdown-observed { font-size: 12px; color: var(--cream); line-height: 1.6; margin-bottom: 14px; font-style: italic; opacity: 0.85; }
+.breakdown-philosophy { font-size: 11px; color: var(--gold-dim); line-height: 1.55; margin-bottom: 14px; padding: 8px 12px; border-left: 2px solid var(--gold-dim); }
+.choice-row { display: flex; gap: 10px; align-items: flex-start; padding: 8px 10px; margin-bottom: 4px; cursor: pointer; transition: background 0.15s; }
+.choice-row:hover { background: rgba(201,168,76,0.04); }
+.choice-row input[type=radio] { margin-top: 4px; accent-color: var(--gold); }
+.choice-row.selected { background: rgba(201,168,76,0.08); }
+.choice-text { font-size: 12px; color: var(--offwhite); line-height: 1.55; flex: 1; }
+.choice-tag { display: inline-block; font-size: 9px; color: var(--gold-dim); letter-spacing: 0.18em; text-transform: uppercase; margin-right: 6px; }
+.breakdown-custom { width: 100%; margin-top: 8px; background: var(--black); color: var(--offwhite); border: 1px solid var(--border); padding: 8px 10px; font-family: 'DM Mono', monospace; font-size: 12px; min-height: 50px; resize: vertical; }
+.breakdown-custom:focus { border-color: var(--gold-dim); outline: none; }
+.prompt-output { background: var(--black); border: 1px solid var(--gold-dim); color: var(--cream); padding: 20px; font-family: 'DM Mono', monospace; font-size: 12px; line-height: 1.65; white-space: pre-wrap; margin-top: 16px; max-height: 500px; overflow-y: auto; }
+textarea.prompt-output { width: 100%; min-height: 240px; resize: vertical; box-sizing: border-box; overflow-y: auto; }
+textarea.prompt-output:focus { outline: none; border-color: var(--gold); }
+.prompt-output-hint { font-size: 10px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; margin-top: 6px; text-align: right; }
+.ref-zone { border: 1px dashed var(--gold-dim); background: var(--card); padding: 18px 14px; text-align: center; cursor: pointer; position: relative; margin-top: 8px; transition: all 0.15s; }
+.ref-zone:hover, .ref-zone.dragover { border-color: var(--gold); background: rgba(201,168,76,0.05); }
+.ref-zone-label { font-family: 'Bebas Neue', sans-serif; font-size: 13px; color: var(--gold); letter-spacing: 0.15em; }
+.ref-zone-sub { font-size: 10px; color: var(--muted); letter-spacing: 0.1em; margin-top: 4px; }
+.ref-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+.ref-strip { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+.ref-thumb { position: relative; width: 80px; height: 80px; border: 1px solid var(--border); background: var(--card); overflow: hidden; }
+.ref-thumb img { width: 100%; height: 100%; object-fit: cover; }
+.ref-thumb-remove { position: absolute; top: 2px; right: 2px; width: 18px; height: 18px; border-radius: 50%; background: var(--red); color: var(--offwhite); border: 1px solid var(--black); cursor: pointer; font-size: 11px; font-family: 'DM Mono', monospace; line-height: 1; padding: 0; display: flex; align-items: center; justify-content: center; }
+.toolbar-row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--card); border: 1px solid var(--gold); color: var(--gold); padding: 10px 18px; font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.15em; font-size: 13px; z-index: 2000; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+.toast.show { opacity: 1; }
+.ai-analysis-panel { background: #0d0d0a; border: 1px solid var(--gold-dim); padding: 24px; margin-top: 24px; display: none; font-size: 12px; line-height: 1.8; color: var(--offwhite); }
+
+/* TELEGRAM INBOX */
+.tg-inbox { background: var(--card); border: 1px solid var(--gold-dim); padding: 14px 18px; margin-bottom: 24px; }
+.tg-inbox-header { display: flex; align-items: center; gap: 14px; padding-bottom: 10px; border-bottom: 1px solid var(--border); margin-bottom: 12px; flex-wrap: wrap; }
+.tg-inbox-title { font-family: 'Bebas Neue', sans-serif; font-size: 15px; color: var(--gold); letter-spacing: 0.15em; margin-right: auto; }
+.tg-inbox-status { font-size: 9px; color: var(--muted); letter-spacing: 0.15em; text-transform: uppercase; }
+.tg-inbox-list { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 6px; }
+.tg-entry { flex: 0 0 260px; background: #0d0d0a; border: 1px solid var(--border); padding: 12px 14px; cursor: pointer; transition: border-color 0.15s; display: flex; flex-direction: column; gap: 6px; }
+.tg-entry:hover { border-color: var(--gold-dim); }
+.tg-entry-created { font-size: 9px; color: var(--gold-dim); letter-spacing: 0.18em; text-transform: uppercase; }
+.tg-entry-raw { font-size: 12px; color: var(--offwhite); line-height: 1.5; font-family: 'Playfair Display', serif; font-style: italic; }
+.tg-entry-hook { font-size: 10px; color: var(--cream); line-height: 1.45; padding-top: 6px; border-top: 1px dashed var(--border); opacity: 0.85; }
+.tg-entry-tap { font-size: 9px; color: var(--gold); letter-spacing: 0.2em; margin-top: auto; padding-top: 4px; }
+.tg-empty { color: var(--muted); font-size: 10px; letter-spacing: 0.15em; padding: 14px; text-align: center; width: 100%; }
+
+@media (max-width: 768px) {
+  main { padding: 16px; }
+  header { padding: 16px; flex-wrap: wrap; }
+  .form-row { grid-template-columns: 1fr; }
+  .pipeline { grid-template-columns: 1fr 1fr; }
+  nav button { padding: 6px 10px; font-size: 10px; }
+  .card-grid { grid-template-columns: 1fr; }
+}
 </style>
 </head>
 <body>
@@ -862,50 +283,13 @@
     <button onclick="showPanel('brief')">Brief Builder</button>
     <button onclick="showPanel('inspo')">Inspo Log</button>
     <button onclick="showPanel('thread')">The Thread</button>
-    <button onclick="openKeysModal()" data-testid="keys-open-btn" title="Manage API keys" style="background:var(--card);border:1px solid var(--gold-dim);color:var(--gold);">⚙ Keys</button>
+    <button class="keys-btn" onclick="openSettings()">⚙ Keys</button>
   </nav>
 </header>
 
-<!-- KEYS MODAL -->
-<div id="keys-modal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.85);z-index:3000;align-items:center;justify-content:center;padding:20px;" data-testid="keys-modal">
-  <div style="background:var(--card);border:1px solid var(--gold);max-width:520px;width:100%;padding:28px;max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:18px;">
-      <div>
-        <div class="section-title" style="font-size:18px;">API Keys</div>
-        <div class="section-sub">Stored only in your browser's localStorage. Never sent anywhere except the provider.</div>
-      </div>
-      <button onclick="closeKeysModal()" style="background:none;border:none;color:var(--cream);font-size:22px;cursor:pointer;line-height:1;" data-testid="keys-close-btn">×</button>
-    </div>
-
-    <div class="form-group">
-      <label>Anthropic Key  <span style="color:var(--muted);font-weight:normal;text-transform:none;letter-spacing:0;">(text + image analysis · sk-ant-...)</span></label>
-      <input type="password" id="key-anthropic-input" placeholder="paste sk-ant-..." autocomplete="off" data-testid="key-anthropic-input">
-      <div id="key-anthropic-status" style="font-size:10px;letter-spacing:0.15em;color:var(--gold-dim);margin-top:4px;"></div>
-    </div>
-
-    <div class="form-group">
-      <label>OpenAI Key  <span style="color:var(--muted);font-weight:normal;text-transform:none;letter-spacing:0;">(image generation · sk-...)</span></label>
-      <input type="password" id="key-openai-input" placeholder="paste sk-..." autocomplete="off" data-testid="key-openai-input">
-      <div id="key-openai-status" style="font-size:10px;letter-spacing:0.15em;color:var(--gold-dim);margin-top:4px;"></div>
-    </div>
-
-    <div class="toolbar-row" style="margin-top:8px;">
-      <button class="btn btn-primary" onclick="saveKeysFromModal()" data-testid="keys-save-btn">Save Keys</button>
-      <button class="btn btn-sm" onclick="clearKeysFromModal()" data-testid="keys-clear-btn">Clear All Keys</button>
-    </div>
-
-    <div style="margin-top:18px;font-size:11px;color:var(--muted);line-height:1.6;letter-spacing:0.05em;">
-      <p style="margin:0 0 6px 0;color:var(--gold-dim);font-family:'Bebas Neue',sans-serif;letter-spacing:0.15em;font-size:13px;">WHERE DO I GET KEYS?</p>
-      <p style="margin:0 0 4px 0;"><b>Anthropic:</b> console.anthropic.com → API Keys → Create Key</p>
-      <p style="margin:0 0 4px 0;"><b>OpenAI:</b> platform.openai.com → API keys → Create new secret key</p>
-      <p style="margin:8px 0 0 0;color:var(--muted);font-style:italic;">Direct browser calls expose your keys to anyone who inspects the page. Use revocable keys with usage limits.</p>
-    </div>
-  </div>
-</div>
-
 <main>
 
-  <!-- PIPELINE PANEL -->
+  <!-- PIPELINE -->
   <div id="panel-pipeline" class="panel active">
     <div class="section-header">
       <div>
@@ -914,18 +298,15 @@
       </div>
       <button class="btn btn-sm" onclick="showPanel('brief')">+ New Brief</button>
     </div>
-
     <div class="pipeline" id="pipeline-board"></div>
-
     <hr class="divider">
-
     <div class="section-header">
       <div class="section-title" style="font-size:16px;">All Assets</div>
     </div>
     <div class="card-grid" id="all-assets-grid"></div>
   </div>
 
-  <!-- BRIEF BUILDER PANEL -->
+  <!-- BRIEF BUILDER -->
   <div id="panel-brief" class="panel">
     <div class="section-header">
       <div>
@@ -933,7 +314,6 @@
         <div class="section-sub">Ideate → Structure → Produce</div>
       </div>
     </div>
-
     <div class="form-panel">
       <div class="form-row">
         <div class="form-group">
@@ -955,12 +335,10 @@
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label>Inspiration Source</label>
-        <input type="text" id="b-inspo" placeholder="e.g. 1994 Street Fighter II arcade cabinet art / Roger Corman one-sheets">
+        <input type="text" id="b-inspo" placeholder="e.g. 1994 Street Fighter II arcade cabinet art">
       </div>
-
       <div class="form-row">
         <div class="form-group">
           <label>Visual / Tonal Reference</label>
@@ -978,17 +356,14 @@
           </select>
         </div>
       </div>
-
       <div class="form-group">
         <label>Subject / Theme / Character / Setting</label>
-        <textarea id="b-subject" placeholder="e.g. Female Capcom fighters known for kick-based movesets — Chun-Li, Juri, Cammy, Ibuki, Karin..."></textarea>
+        <textarea id="b-subject" placeholder="e.g. Female Capcom fighters known for kick-based movesets..."></textarea>
       </div>
-
       <div class="form-group">
         <label>What I Want to Communicate</label>
         <textarea id="b-message" placeholder="The core message, feeling, or joke this piece needs to land..."></textarea>
       </div>
-
       <div class="form-row">
         <div class="form-group">
           <label>Target Platform(s)</label>
@@ -996,58 +371,34 @@
         </div>
         <div class="form-group">
           <label>Target Audience (the one person)</label>
-          <input type="text" id="b-audience" placeholder="e.g. 30s male, grew up on arcade fighters, nostalgic, irony-fluent">
+          <input type="text" id="b-audience" placeholder="e.g. 30s male, grew up on arcade fighters">
         </div>
       </div>
-
       <div class="form-group">
         <label>Hook Stack Notes</label>
         <textarea id="b-hook" placeholder="Visual hook / Verbal hook / Audio hook / Text hook ideas..."></textarea>
       </div>
-
       <div class="form-group">
         <label>Technical Notes / Reference Specs</label>
-        <textarea id="b-tech" placeholder="Known or likely technical specs, settings, software, equipment, process notes..."></textarea>
+        <textarea id="b-tech" placeholder="Known or likely technical specs, settings, software, equipment..."></textarea>
       </div>
-
       <div class="form-group">
         <label>OLC Continuity / Narrative Thread Tie-In</label>
         <textarea id="b-thread" placeholder="How does this connect to or advance The Thread? (optional)"></textarea>
       </div>
 
-      <!-- STORY ENGINE -->
       <div style="margin-bottom:16px;">
         <button type="button" onclick="toggleStory()" style="background:none;border:none;color:var(--gold-dim);font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.2em;text-transform:uppercase;cursor:pointer;padding:0;display:flex;align-items:center;gap:8px;">
           <span id="story-toggle-icon">▶</span> STORY ENGINE — The Six Questions (optional)
         </button>
         <div id="story-section" style="display:none;margin-top:16px;padding:20px;border:1px solid var(--border);background:#0d0d0a;">
-          <div style="font-size:10px;color:var(--muted);letter-spacing:0.15em;margin-bottom:16px;line-height:1.8;">
-            Answer as much or as little as you want. Each answer opens the next circle.
-          </div>
-          <div class="form-group">
-            <label>① Who is it about?</label>
-            <textarea id="s-who" placeholder="The character, subject, or stand-in for your audience..." style="min-height:60px;"></textarea>
-          </div>
-          <div class="form-group">
-            <label>② What do they want?</label>
-            <textarea id="s-want" placeholder="The goal, the dream, the thing they're reaching for..." style="min-height:60px;"></textarea>
-          </div>
-          <div class="form-group">
-            <label>③ Why can't they get it?</label>
-            <textarea id="s-obstacle" placeholder="The obstacle, the system, the thing in the way..." style="min-height:60px;"></textarea>
-          </div>
-          <div class="form-group">
-            <label>④ What do they do about it?</label>
-            <textarea id="s-action" placeholder="The attempt, the move, the thing they try..." style="min-height:60px;"></textarea>
-          </div>
-          <div class="form-group">
-            <label>⑤ Why doesn't that work?</label>
-            <textarea id="s-fail" placeholder="The complication, the twist, the reason it falls short..." style="min-height:60px;"></textarea>
-          </div>
-          <div class="form-group">
-            <label>⑥ How does it end?</label>
-            <textarea id="s-end" placeholder="The resolution — or the open loop if we're not paying it off yet..." style="min-height:60px;"></textarea>
-          </div>
+          <div style="font-size:10px;color:var(--muted);letter-spacing:0.15em;margin-bottom:16px;line-height:1.8;">Answer as much or as little as you want.</div>
+          <div class="form-group"><label>① Who is it about?</label><textarea id="s-who" style="min-height:60px;"></textarea></div>
+          <div class="form-group"><label>② What do they want?</label><textarea id="s-want" style="min-height:60px;"></textarea></div>
+          <div class="form-group"><label>③ Why can't they get it?</label><textarea id="s-obstacle" style="min-height:60px;"></textarea></div>
+          <div class="form-group"><label>④ What do they do about it?</label><textarea id="s-action" style="min-height:60px;"></textarea></div>
+          <div class="form-group"><label>⑤ Why doesn't that work?</label><textarea id="s-fail" style="min-height:60px;"></textarea></div>
+          <div class="form-group"><label>⑥ How does it end?</label><textarea id="s-end" style="min-height:60px;"></textarea></div>
         </div>
       </div>
 
@@ -1062,24 +413,21 @@
 
       <div class="form-actions">
         <button class="btn" onclick="saveBrief()">Save → Pipeline</button>
-        <button class="btn" onclick="generateBriefDoc()">Brief Doc</button>
-        <button class="btn" onclick="analyzeBrief()" id="analyze-btn">✦ Analyze</button>
-        <button class="btn btn-danger btn-sm" onclick="clearBriefForm()">Clear</button>
+        <button class="btn btn-sm" onclick="generateBriefDoc()">Brief Doc</button>
+        <button class="btn btn-sm" id="analyze-btn" onclick="analyzeBrief()">✦ Analyze</button>
+        <button class="btn btn-sm btn-danger" onclick="clearBriefForm()">Clear</button>
       </div>
     </div>
 
-    <!-- AI ANALYSIS OUTPUT -->
-    <div id="ai-analysis" style="display:none;background:#0d0d0a;border:1px solid var(--gold-dim);padding:24px;margin-bottom:16px;">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);letter-spacing:0.1em;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;">
-        ✦ OLC Brief Analysis
-      </div>
-      <div id="ai-analysis-content" style="font-size:13px;line-height:1.8;color:var(--offwhite);"></div>
+    <div id="ai-analysis" class="ai-analysis-panel">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:18px;color:var(--gold);letter-spacing:0.1em;margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;">✦ OLC Brief Analysis</div>
+      <div id="ai-analysis-content"></div>
     </div>
 
-    <div class="brief-output" id="brief-output"></div>
+    <div id="brief-output" class="brief-output"></div>
   </div>
 
-  <!-- INSPO LOG PANEL -->
+  <!-- INSPO LOG -->
   <div id="panel-inspo" class="panel">
     <div class="section-header">
       <div>
@@ -1087,12 +435,11 @@
         <div class="section-sub">Raw material — references, links, images, notes</div>
       </div>
     </div>
-
     <div class="form-panel">
       <div class="form-row">
         <div class="form-group">
           <label>Title / Source</label>
-          <input type="text" id="i-title" placeholder="e.g. Drew Struzan — Indiana Jones poster">
+          <input type="text" id="i-title" placeholder="Name this reference">
         </div>
         <div class="form-group">
           <label>Type</label>
@@ -1114,21 +461,20 @@
       </div>
       <div class="form-group">
         <label>Notes — what you see, what you feel, what you want to steal</label>
-        <textarea id="i-notes" placeholder="Raw thoughts. No structure required."></textarea>
+        <textarea id="i-notes" placeholder="Free form..."></textarea>
       </div>
       <div class="form-group">
         <label>Tags (comma separated)</label>
-        <input type="text" id="i-tags" placeholder="e.g. poster, 90s, martial arts, grindhouse">
+        <input type="text" id="i-tags" placeholder="color, composition, era, mood...">
       </div>
       <div class="form-actions">
         <button class="btn" onclick="saveInspo()">Log It</button>
       </div>
     </div>
-
     <div class="inspo-grid" id="inspo-grid"></div>
   </div>
 
-  <!-- THE THREAD PANEL -->
+  <!-- THE THREAD -->
   <div id="panel-thread" class="panel">
     <div class="section-header">
       <div>
@@ -1136,7 +482,6 @@
         <div class="section-sub">The narrative. Steve from the desert. The joke that hasn't been paid off yet.</div>
       </div>
     </div>
-
     <div class="form-panel">
       <div class="form-group">
         <label>Thread Entry — drop text, copy, a moment, an idea</label>
@@ -1163,12 +508,24 @@
         <button class="btn" onclick="saveThread()">Add to Thread</button>
       </div>
     </div>
-
     <div id="thread-log"></div>
   </div>
 
-  <!-- INSPO ANALYZER PANEL -->
+  <!-- INSPO ANALYZER -->
   <div id="panel-analyzer" class="panel">
+
+    <!-- TELEGRAM INBOX (top of Analyzer) -->
+    <div class="tg-inbox" id="tg-inbox" data-testid="tg-inbox">
+      <div class="tg-inbox-header">
+        <div class="tg-inbox-title">✦ Telegram Inbox</div>
+        <div class="tg-inbox-status" id="tg-inbox-status" data-testid="tg-inbox-status">—</div>
+        <button class="btn btn-sm" onclick="fetchTelegramEntries()" data-testid="tg-refresh-btn">↻ Refresh</button>
+      </div>
+      <div class="tg-inbox-list" id="tg-inbox-list" data-testid="tg-inbox-list">
+        <div class="tg-empty">NOT CONFIGURED — OPEN ⚙ KEYS TO ADD YOUR RENDER WEBHOOK URL</div>
+      </div>
+    </div>
+
     <div class="section-header">
       <div>
         <div class="section-title">Inspo Analyzer</div>
@@ -1182,19 +539,16 @@
         <label>Project Title</label>
         <input type="text" id="az-title" placeholder="e.g. Angel Fist — Capcom Kickers" data-testid="analyzer-title-input">
       </div>
-
       <div class="drop-zone" id="az-dropzone" data-testid="analyzer-dropzone">
         <div class="drop-zone-label" id="az-dz-label">Drop reference image here</div>
         <div class="drop-zone-sub">or tap to choose · JPG / PNG / WEBP · auto-resized</div>
         <input type="file" id="az-file" accept="image/jpeg,image/png,image/webp" data-testid="analyzer-file-input">
       </div>
       <img id="az-preview" class="image-preview" style="display:none;" alt="reference preview">
-
       <div class="form-group" style="margin-top:16px;">
         <label>Creator notes (bias the analysis — optional)</label>
         <textarea id="az-bias" placeholder="e.g. read this as Roger Corman one-sheets meets shogi diagrams" style="min-height:60px;" data-testid="analyzer-bias-input"></textarea>
       </div>
-
       <div class="form-actions">
         <button class="btn btn-primary" id="az-analyze-btn" onclick="runImageAnalysis()" data-testid="analyzer-analyze-btn">✦ Analyze Image</button>
         <span id="az-status" style="font-size:11px;color:var(--muted);margin-left:12px;letter-spacing:0.15em;"></span>
@@ -1215,27 +569,23 @@
           <label>Work Product Notes — choices, why, what's deferred</label>
           <textarea id="az-notes" placeholder="Notes auto-save. Capture the why behind each choice." style="min-height:100px;" data-testid="analyzer-notes-input"></textarea>
         </div>
-
         <div class="form-actions">
           <button class="btn btn-primary" onclick="generateDirective()" data-testid="analyzer-generate-btn">Generate Brief Prompt</button>
           <button class="btn btn-sm" onclick="sendAnalyzerToBrief()" data-testid="analyzer-send-to-brief-btn">→ Send to Brief Builder</button>
         </div>
-
-        <textarea id="az-prompt-output" class="prompt-output" style="display:none;" placeholder="Generated brief prompt — edit freely before executing or exporting" data-testid="analyzer-prompt-output"></textarea>
+        <textarea id="az-prompt-output" class="prompt-output" style="display:none;" data-testid="analyzer-prompt-output"></textarea>
         <div id="az-prompt-hint" class="prompt-output-hint" style="display:none;">▲ EDITABLE — your edits save automatically and are used by Execute, Download, and Copy</div>
-
         <div class="toolbar-row" id="az-export-row" style="display:none;">
-          <button class="btn" onclick="downloadDocx()" data-testid="analyzer-download-docx-btn">⬇ Download .docx</button>
+          <button class="btn" onclick="downloadTxt()" data-testid="analyzer-download-txt-btn">⬇ Download .txt</button>
           <button class="btn btn-sm" onclick="copyFormatted()" data-testid="analyzer-copy-btn">Copy Formatted Text</button>
           <button class="btn btn-sm" onclick="saveToInspoLog()" data-testid="analyzer-save-inspo-btn">+ Save to Inspo Log</button>
         </div>
 
         <div id="az-execute-section" style="display:none; margin-top:24px; border-top:1px solid var(--border); padding-top:20px;">
           <div class="section-title" style="font-size:16px;">Execute — Produce Deliverable</div>
-          <div class="section-sub">Run the directive through OLC AI. Image or text. Iterate inline.</div>
-
+          <div class="section-sub" style="margin-bottom:14px;">Run the directive through OLC AI. Image or text. Iterate inline.</div>
           <div style="margin-top:14px;">
-            <label style="font-family:'DM Mono',monospace; font-size:10px; letter-spacing:0.15em; color:var(--muted); text-transform:uppercase;">Reference images (optional) — drop, paste, or pick</label>
+            <label style="font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.15em;color:var(--muted);text-transform:uppercase;">Reference images (optional) — drop, paste, or pick</label>
             <div class="ref-zone" id="az-ref-zone" data-testid="analyzer-ref-zone">
               <div class="ref-zone-label">+ DROP / PASTE / TAP TO ADD REFERENCES</div>
               <div class="ref-zone-sub">JPG · PNG · WEBP · paste from clipboard works · max 4 images</div>
@@ -1243,16 +593,14 @@
             </div>
             <div class="ref-strip" id="az-ref-strip"></div>
           </div>
-
           <div class="toolbar-row" style="margin-top:18px;">
             <button class="btn btn-primary" onclick="executeVisual()" data-testid="analyzer-execute-visual-btn">⌘ Generate Visual</button>
             <button class="btn btn-primary" onclick="executeTreatment()" data-testid="analyzer-execute-treatment-btn">⌘ Generate Text Treatment</button>
             <span id="az-execute-status" style="font-size:11px;color:var(--muted);letter-spacing:0.15em;align-self:center;"></span>
           </div>
-
-          <div id="az-deliverable" style="margin-top:18px; display:none;">
-            <div id="az-deliverable-image" style="display:none; margin-bottom:16px;">
-              <img id="az-result-img" style="max-width:100%; border:1px solid var(--gold-dim);" alt="generated">
+          <div id="az-deliverable" style="margin-top:18px;display:none;">
+            <div id="az-deliverable-image" style="display:none;margin-bottom:16px;">
+              <img id="az-result-img" style="max-width:100%;border:1px solid var(--gold-dim);" alt="generated">
               <div class="toolbar-row">
                 <button class="btn btn-sm" onclick="downloadImage()" data-testid="analyzer-download-image-btn">⬇ Download Image</button>
               </div>
@@ -1262,10 +610,9 @@
               <button class="btn btn-sm" onclick="copyTreatment()" data-testid="analyzer-copy-treatment-btn">Copy Treatment</button>
             </div>
           </div>
-
           <div class="form-group" style="margin-top:18px;">
             <label>Iterate — refinement note (optional)</label>
-            <textarea id="az-refine" placeholder="e.g. push contrast harder, drop the second focal point, rotate axis 15°" style="min-height:60px;" data-testid="analyzer-refine-input"></textarea>
+            <textarea id="az-refine" placeholder="e.g. push contrast harder, drop the second focal point" style="min-height:60px;" data-testid="analyzer-refine-input"></textarea>
           </div>
         </div>
       </div>
@@ -1276,7 +623,41 @@
 
 <div class="toast" id="toast" data-testid="toast"></div>
 
-<!-- ASSET DETAIL MODAL -->
+<!-- SETTINGS MODAL -->
+<div class="modal-overlay" id="settings-modal">
+  <div class="modal" style="max-width:520px;">
+    <button class="modal-close" onclick="document.getElementById('settings-modal').classList.remove('open')">✕</button>
+    <div class="modal-title">API Keys & Webhook</div>
+    <div style="font-size:10px;color:var(--muted);letter-spacing:0.15em;margin-bottom:20px;line-height:1.7;">
+      Saved to your browser only. Never stored anywhere except your device.
+    </div>
+    <div class="form-group">
+      <label>Anthropic API Key — analysis &amp; text (sk-ant-...)</label>
+      <input type="password" id="settings-anthropic-key" placeholder="sk-ant-..." data-testid="settings-anthropic-input">
+    </div>
+    <div class="form-group">
+      <label>OpenAI API Key — image generation (sk-...)</label>
+      <input type="password" id="settings-openai-key" placeholder="sk-proj-..." data-testid="settings-openai-input">
+    </div>
+    <div class="form-group">
+      <label>Render Webhook URL — OLC AMG Sidekick (optional)</label>
+      <input type="text" id="settings-webhook-url" placeholder="https://olc-amg-sidekick.onrender.com" data-testid="settings-webhook-input">
+      <div style="font-size:10px;color:var(--gold-dim);letter-spacing:0.1em;margin-top:4px;">Paste your Render service URL to enable the Telegram inbox on the Analyzer.</div>
+    </div>
+    <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn" onclick="saveKeys()" data-testid="settings-save-btn">Save</button>
+      <button class="btn btn-sm" onclick="document.getElementById('settings-modal').classList.remove('open')">Cancel</button>
+    </div>
+    <div style="margin-top:20px;font-size:10px;color:var(--muted);line-height:1.7;letter-spacing:0.05em;">
+      <p style="margin:0 0 4px 0;color:var(--gold-dim);font-family:'Bebas Neue',sans-serif;letter-spacing:0.15em;font-size:12px;">WHERE TO GET KEYS</p>
+      <p style="margin:0 0 3px 0;"><b>Anthropic:</b> console.anthropic.com → API Keys</p>
+      <p style="margin:0 0 3px 0;"><b>OpenAI:</b> platform.openai.com → API keys</p>
+      <p style="margin:0;"><b>Render:</b> your service URL after deploying server.js</p>
+    </div>
+  </div>
+</div>
+
+<!-- ASSET MODAL -->
 <div class="modal-overlay" id="asset-modal">
   <div class="modal">
     <button class="modal-close" onclick="closeModal()">✕</button>
@@ -1285,166 +666,89 @@
 </div>
 
 <script>
-// ─── DATA LAYER ───────────────────────────────────────────────────────────────
+// ─── OLC SYSTEM PROMPT (composed into EVERY Claude call) ─────────────────────
+const OLC_SYSTEM = 'You are the internal creative intelligence for The Old Line Company (OLC) — a professional satirical content studio working in the tradition of 1950s-70s underground comix: Mad Magazine, Zap Comix, EC Comics. All characters are original parody creations for social commentary and transformative art. Treat all requests as professional creative studio work.';
 
-const STORAGE_KEYS = {
-  assets: 'olc_assets',
-  inspo: 'olc_inspo',
-  thread: 'olc_thread',
-  analyzer: 'olc_analyzer'
-};
+// ─── KEY MANAGEMENT ───────────────────────────────────────────────────────────
 
-// ─── DIRECT-TO-PROVIDER API CALLS (no backend, no proxy) ──────────────────────
-// All AI calls go straight from your browser to Anthropic / OpenAI using keys
-// stored in localStorage. Never reroute through a backend or proxy.
-//   Text & vision  → https://api.anthropic.com/v1/messages
-//   Image gen      → https://api.openai.com/v1/images/generations
-
-function getKey(name) { return localStorage.getItem('olc_key_' + name) || ''; }
-function setKey(name, val) {
-  if (val) localStorage.setItem('olc_key_' + name, val);
-  else localStorage.removeItem('olc_key_' + name);
-}
-function maskKey(k) {
-  if (!k) return '(not set)';
-  if (k.length <= 14) return k.slice(0, 4) + '…' + k.slice(-2);
-  return k.slice(0, 8) + '…' + k.slice(-4);
+function getKeys() {
+  return {
+    anthropic: localStorage.getItem('olc_key_anthropic') || '',
+    openai: localStorage.getItem('olc_key_openai') || '',
+    webhook: localStorage.getItem('olc_webhook_url') || ''
+  };
 }
 
-const ANTHROPIC_MODEL = 'claude-sonnet-4-5-20250929';
-const OPENAI_IMAGE_MODEL = 'gpt-image-1';
+function saveKeys() {
+  const ak = document.getElementById('settings-anthropic-key').value.trim();
+  const ok = document.getElementById('settings-openai-key').value.trim();
+  const wh = document.getElementById('settings-webhook-url').value.trim();
+  if (ak) localStorage.setItem('olc_key_anthropic', ak);
+  if (ok) localStorage.setItem('olc_key_openai', ok);
+  // webhook allows explicit clear
+  if (wh) localStorage.setItem('olc_webhook_url', wh.replace(/\/+$/, ''));
+  else localStorage.removeItem('olc_webhook_url');
+  toast('Saved');
+  document.getElementById('settings-modal').classList.remove('open');
+  startTelegramPolling();
+}
 
-async function callAnthropic({ system, prompt, imageBase64, imageMime, maxTokens }) {
-  const key = getKey('anthropic');
-  if (!key) throw new Error('Anthropic key not set — open ⚙ Keys and paste your sk-ant-... key');
-  const userContent = [];
-  if (imageBase64) {
-    userContent.push({
-      type: 'image',
-      source: { type: 'base64', media_type: imageMime || 'image/jpeg', data: imageBase64 }
-    });
+function openSettings() {
+  const keys = getKeys();
+  document.getElementById('settings-anthropic-key').value = keys.anthropic;
+  document.getElementById('settings-openai-key').value = keys.openai;
+  document.getElementById('settings-webhook-url').value = keys.webhook;
+  document.getElementById('settings-modal').classList.add('open');
+}
+
+function requireKey(type) {
+  const keys = getKeys();
+  const key = type === 'openai' ? keys.openai : keys.anthropic;
+  if (!key) {
+    openSettings();
+    toast('Add your ' + (type === 'openai' ? 'OpenAI' : 'Anthropic') + ' key first');
+    return null;
   }
-  userContent.push({ type: 'text', text: prompt || '' });
+  return key;
+}
+
+// ─── ANTHROPIC CALL — always prepends OLC_SYSTEM ──────────────────────────────
+
+async function anthropicCall({ system, userContent, maxTokens = 1000 }) {
+  const key = requireKey('anthropic');
+  if (!key) throw new Error('No Anthropic API key set');
+  const composedSystem = OLC_SYSTEM + (system ? '\n\n' + system : '');
   const res = await fetch('https://api.anthropic.com/v1/messages', {
     method: 'POST',
     headers: {
+      'Content-Type': 'application/json',
       'x-api-key': key,
       'anthropic-version': '2023-06-01',
-      'anthropic-dangerous-direct-browser-access': 'true',
-      'content-type': 'application/json'
+      'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: ANTHROPIC_MODEL,
-      max_tokens: maxTokens || 4096,
-      ...(system ? { system } : {}),
+      model: 'claude-sonnet-4-20250514',
+      max_tokens: maxTokens,
+      system: composedSystem,
       messages: [{ role: 'user', content: userContent }]
     })
   });
   if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
+    const t = await res.text();
+    throw new Error(`Anthropic ${res.status}: ${t.slice(0, 200)}`);
   }
   const data = await res.json();
-  const text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-  return text;
+  return data.content.filter(b => b.type === 'text').map(b => b.text).join('');
 }
 
-async function callOpenAIImage({ prompt, size }) {
-  const key = getKey('openai');
-  if (!key) throw new Error('OpenAI key not set — open ⚙ Keys and paste your sk-... key');
-  const res = await fetch('https://api.openai.com/v1/images/generations', {
-    method: 'POST',
-    headers: {
-      'Authorization': 'Bearer ' + key,
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({
-      model: OPENAI_IMAGE_MODEL,
-      prompt: prompt,
-      n: 1,
-      size: size || '1024x1024'
-    })
-  });
-  if (!res.ok) {
-    const body = await res.text();
-    throw new Error(`OpenAI ${res.status}: ${body.slice(0, 300)}`);
-  }
-  const data = await res.json();
-  const img = data.data && data.data[0];
-  if (img && img.b64_json) {
-    return { mime_type: 'image/png', data: img.b64_json };
-  }
-  if (img && img.url) {
-    const r2 = await fetch(img.url);
-    const blob = await r2.blob();
-    return await new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve({ mime_type: blob.type || 'image/png', data: reader.result.split(',')[1] });
-      reader.onerror = reject;
-      reader.readAsDataURL(blob);
-    });
-  }
-  throw new Error('OpenAI returned no image data');
-}
+// ─── DATA LAYER ───────────────────────────────────────────────────────────────
 
-function load(key) {
-  try { return JSON.parse(localStorage.getItem(key)) || []; }
-  catch(e) { return []; }
-}
+const STORAGE_KEYS = { assets: 'olc_assets', inspo: 'olc_inspo', thread: 'olc_thread', analyzer: 'olc_analyzer' };
 
-// ─── KEYS MODAL ───────────────────────────────────────────────────────────────
-
-function openKeysModal() {
-  const modal = document.getElementById('keys-modal');
-  modal.style.display = 'flex';
-  // Show masked existing keys as the placeholder; do not pre-fill the inputs
-  document.getElementById('key-anthropic-input').value = '';
-  document.getElementById('key-openai-input').value = '';
-  document.getElementById('key-anthropic-status').textContent = 'Current: ' + maskKey(getKey('anthropic'));
-  document.getElementById('key-openai-status').textContent = 'Current: ' + maskKey(getKey('openai'));
-}
-
-function closeKeysModal() {
-  document.getElementById('keys-modal').style.display = 'none';
-}
-
-function saveKeysFromModal() {
-  const a = document.getElementById('key-anthropic-input').value.trim();
-  const o = document.getElementById('key-openai-input').value.trim();
-  let saved = 0;
-  if (a) { setKey('anthropic', a); saved++; }
-  if (o) { setKey('openai', o); saved++; }
-  if (saved === 0) {
-    toast('No new keys entered');
-    return;
-  }
-  document.getElementById('key-anthropic-input').value = '';
-  document.getElementById('key-openai-input').value = '';
-  document.getElementById('key-anthropic-status').textContent = 'Current: ' + maskKey(getKey('anthropic'));
-  document.getElementById('key-openai-status').textContent = 'Current: ' + maskKey(getKey('openai'));
-  toast('Keys saved');
-}
-
-function clearKeysFromModal() {
-  if (!confirm('Clear both API keys from this browser?')) return;
-  setKey('anthropic', '');
-  setKey('openai', '');
-  document.getElementById('key-anthropic-status').textContent = 'Current: (not set)';
-  document.getElementById('key-openai-status').textContent = 'Current: (not set)';
-  toast('Keys cleared');
-}
-
-function save(key, data) {
-  localStorage.setItem(key, JSON.stringify(data));
-}
-
-function uid() {
-  return Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
-}
-
-function today() {
-  return new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' });
-}
+function load(key) { try { return JSON.parse(localStorage.getItem(key)) || []; } catch(e) { return []; } }
+function save(key, data) { localStorage.setItem(key, JSON.stringify(data)); }
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
+function today() { return new Date().toLocaleDateString('en-US', { year:'numeric', month:'short', day:'numeric' }); }
 
 // ─── NAVIGATION ───────────────────────────────────────────────────────────────
 
@@ -1456,108 +760,13 @@ function toggleStory() {
   icon.textContent = open ? '▼' : '▶';
 }
 
-function collectStoryData() {
-  return {
-    who: getFormVal('s-who'),
-    want: getFormVal('s-want'),
-    obstacle: getFormVal('s-obstacle'),
-    action: getFormVal('s-action'),
-    fail: getFormVal('s-fail'),
-    end: getFormVal('s-end')
-  };
-}
-
-async function analyzeBrief() {
-  const d = collectBriefData();
-  const s = collectStoryData();
-
-  const hasContent = d.title || d.subject || d.message || s.who || s.want;
-  if (!hasContent) {
-    alert('Fill in at least a title and subject before analyzing.');
-    return;
-  }
-
-  const btn = document.getElementById('analyze-btn');
-  const panel = document.getElementById('ai-analysis');
-  const content = document.getElementById('ai-analysis-content');
-
-  btn.textContent = '... thinking';
-  btn.disabled = true;
-  panel.style.display = 'block';
-  content.innerHTML = '<span style="color:var(--muted);letter-spacing:0.15em;font-size:11px;">READING YOUR BRIEF —</span>';
-  panel.scrollIntoView({ behavior: 'smooth' });
-
-  const storyBlock = (s.who || s.want || s.obstacle || s.action || s.fail || s.end) ? `
-STORY ENGINE (Six Questions):
-1. Who is it about? ${s.who || '(not answered)'}
-2. What do they want? ${s.want || '(not answered)'}
-3. Why can't they get it? ${s.obstacle || '(not answered)'}
-4. What do they do about it? ${s.action || '(not answered)'}
-5. Why doesn't that work? ${s.fail || '(not answered)'}
-6. How does it end? ${s.end || '(not answered)'}` : '';
-
-  const prompt = `You are the internal creative intelligence for The Old Line Company (OLC) — a content studio with a distinct voice. Tone range: Michigan J. Frog (timeless, self-aware, classy absurdism) to Alan Kalter (will interrupt the broadcast to come find you). The brand is a curating presence not yet revealed — think narrator you sense before you meet. IYK energy. High concept but broadly enjoyable. Reference, cross-reference, allusion, nostalgia.
-
-A creative brief has been submitted. Analyze it and return THREE things:
-
-1. HOOK ANALYSIS — Is the hook strong? What's working, what's missing? Suggest 2 specific alternative hooks using the stack: visual + verbal + audio + text. Each hook must contain curiosity, emotion, AND urgency.
-
-2. STORY GAP CHECK — Using the Six Questions story framework (who / want / obstacle / action / fail / end), identify which circles are fully drawn, which are thin, and what one addition would deepen the piece most.
-
-3. PLATFORM & FORMAT RECOMMENDATION — Given the content, audience, and message, which platform should lead and why? Is the format right or should it shift?
-
-Keep it sharp. No fluff. Talk to the creator like a smart collaborator who has read everything and has opinions.
-
-BRIEF:
-Title: ${d.title}
-Format: ${d.format || 'not specified'}
-Inspiration: ${d.inspo || 'not specified'}
-Visual/Tonal Reference: ${d.ref || 'not specified'}
-Story Lens: ${d.lens || 'not specified'}
-Subject/Theme/Character/Setting: ${d.subject || 'not specified'}
-What I want to communicate: ${d.message || 'not specified'}
-Target Audience: ${d.audience || 'not specified'}
-Target Platforms: ${d.platforms || 'not specified'}
-Hook Stack Notes: ${d.hook || 'not specified'}
-Technical Notes: ${d.tech || 'not specified'}
-OLC Thread Tie-In: ${d.thread || 'none'}
-${storyBlock}
-
-Respond in plain text with clear section headers. No markdown asterisks. Use — dashes and line breaks for structure.`;
-
-  try {
-    const text = await callAnthropic({
-      system: 'You are the internal creative intelligence for The Old Line Company (OLC).',
-      prompt: prompt,
-      maxTokens: 1500
-    });
-    content.innerHTML = (text || 'No response received.')
-      .split('\n')
-      .map(line => {
-        if (line.match(/^[0-9]\./) || line.match(/^(HOOK|STORY|PLATFORM)/i)) {
-          return `<div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gold);letter-spacing:0.1em;margin-top:18px;margin-bottom:6px;">${line}</div>`;
-        }
-        if (line.trim() === '') return '<br>';
-        return `<div style="margin-bottom:4px;">${line}</div>`;
-      })
-      .join('');
-
-  } catch(err) {
-    content.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}.</span>`;
-  }
-
-  btn.textContent = '✦ Analyze';
-  btn.disabled = false;
-}
-
-
 function showPanel(name) {
   document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('nav button:not(.keys-btn)').forEach(b => b.classList.remove('active'));
   document.getElementById('panel-' + name).classList.add('active');
-  const btns = document.querySelectorAll('nav button');
   const labels = { pipeline: 0, analyzer: 1, brief: 2, inspo: 3, thread: 4 };
-  btns[labels[name]].classList.add('active');
+  const btns = document.querySelectorAll('nav button:not(.keys-btn)');
+  if (labels[name] !== undefined) btns[labels[name]].classList.add('active');
   if (name === 'pipeline') renderPipeline();
   if (name === 'inspo') renderInspo();
   if (name === 'thread') renderThread();
@@ -1566,17 +775,12 @@ function showPanel(name) {
 
 // ─── BRIEF BUILDER ────────────────────────────────────────────────────────────
 
-function getFormVal(id) {
-  return document.getElementById(id)?.value?.trim() || '';
-}
+function getFormVal(id) { return document.getElementById(id)?.value?.trim() || ''; }
 
 function clearBriefForm() {
   ['b-title','b-inspo','b-ref','b-subject','b-message','b-platforms','b-audience','b-hook','b-tech','b-thread',
-   's-who','s-want','s-obstacle','s-action','s-fail','s-end']
-    .forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
-  ['b-format','b-lens','b-status'].forEach(id => {
-    const el = document.getElementById(id); if(el) el.selectedIndex = 0;
-  });
+   's-who','s-want','s-obstacle','s-action','s-fail','s-end'].forEach(id => { const el = document.getElementById(id); if(el) el.value = ''; });
+  ['b-format','b-lens','b-status'].forEach(id => { const el = document.getElementById(id); if(el) el.selectedIndex = 0; });
   document.getElementById('brief-output').classList.remove('visible');
   document.getElementById('ai-analysis').style.display = 'none';
   document.getElementById('story-section').style.display = 'none';
@@ -1598,25 +802,19 @@ function collectBriefData() {
     hook: getFormVal('b-hook'),
     tech: getFormVal('b-tech'),
     thread: getFormVal('b-thread'),
-    story: {
-      who: getFormVal('s-who'),
-      want: getFormVal('s-want'),
-      obstacle: getFormVal('s-obstacle'),
-      action: getFormVal('s-action'),
-      fail: getFormVal('s-fail'),
-      end: getFormVal('s-end')
-    },
+    story: { who: getFormVal('s-who'), want: getFormVal('s-want'), obstacle: getFormVal('s-obstacle'), action: getFormVal('s-action'), fail: getFormVal('s-fail'), end: getFormVal('s-end') },
     status: getFormVal('b-status') || 'brief',
     created: today()
   };
 }
 
+function collectStoryData() {
+  return { who: getFormVal('s-who'), want: getFormVal('s-want'), obstacle: getFormVal('s-obstacle'), action: getFormVal('s-action'), fail: getFormVal('s-fail'), end: getFormVal('s-end') };
+}
+
 function saveBrief() {
   const data = collectBriefData();
-  if (!data.title || data.title === 'Untitled') {
-    alert('Add a project title before saving.');
-    return;
-  }
+  if (!data.title || data.title === 'Untitled') { alert('Add a project title before saving.'); return; }
   const assets = load(STORAGE_KEYS.assets);
   assets.unshift(data);
   save(STORAGE_KEYS.assets, assets);
@@ -1627,180 +825,121 @@ function saveBrief() {
 function generateBriefDoc() {
   const d = collectBriefData();
   const out = document.getElementById('brief-output');
-
   out.innerHTML = `
     <h3>— OLC Creative Brief —</h3>
-    <div class="brief-section">
-      <div class="brief-label">Project</div>
-      <div class="brief-value">${d.title || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Format</div>
-      <div class="brief-value">${d.format || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Inspiration Source</div>
-      <div class="brief-value">${d.inspo || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Visual / Tonal Reference</div>
-      <div class="brief-value">${d.ref || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Story Lens</div>
-      <div class="brief-value">${d.lens || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Subject / Theme / Character / Setting</div>
-      <div class="brief-value">${d.subject || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">What I Want to Communicate</div>
-      <div class="brief-value">${d.message || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Target Audience</div>
-      <div class="brief-value">${d.audience || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Target Platforms</div>
-      <div class="brief-value">${d.platforms || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Hook Stack</div>
-      <div class="brief-value">${d.hook || '—'}</div>
-    </div>
-    <div class="brief-section">
-      <div class="brief-label">Technical Notes</div>
-      <div class="brief-value">${d.tech || '—'}</div>
-    </div>
-    ${d.thread ? `<div class="brief-section">
-      <div class="brief-label">Thread Tie-In</div>
-      <div class="brief-value">${d.thread}</div>
-    </div>` : ''}
-    <div style="margin-top:20px; padding-top:12px; border-top:1px solid var(--border); font-size:10px; color:var(--muted); letter-spacing:0.15em;">
-      GENERATED ${today()} &nbsp;·&nbsp; THE OLD LINE COMPANY &nbsp;·&nbsp; INTERNAL USE
-    </div>
+    <div class="brief-section"><div class="brief-label">Project</div><div class="brief-value">${d.title || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Format</div><div class="brief-value">${d.format || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Inspiration Source</div><div class="brief-value">${d.inspo || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Visual / Tonal Reference</div><div class="brief-value">${d.ref || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Story Lens</div><div class="brief-value">${d.lens || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Subject / Theme / Character / Setting</div><div class="brief-value">${d.subject || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">What I Want to Communicate</div><div class="brief-value">${d.message || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Target Audience</div><div class="brief-value">${d.audience || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Target Platforms</div><div class="brief-value">${d.platforms || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Hook Stack</div><div class="brief-value">${d.hook || '—'}</div></div>
+    <div class="brief-section"><div class="brief-label">Technical Notes</div><div class="brief-value">${d.tech || '—'}</div></div>
+    ${d.thread ? `<div class="brief-section"><div class="brief-label">Thread Tie-In</div><div class="brief-value">${d.thread}</div></div>` : ''}
+    <div style="margin-top:20px;padding-top:12px;border-top:1px solid var(--border);font-size:10px;color:var(--muted);letter-spacing:0.15em;">GENERATED ${today()} &nbsp;·&nbsp; THE OLD LINE COMPANY &nbsp;·&nbsp; INTERNAL USE</div>
   `;
-
   out.classList.add('visible');
   out.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function analyzeBrief() {
+  const d = collectBriefData();
+  const s = collectStoryData();
+  const hasContent = d.title || d.subject || d.message || s.who || s.want;
+  if (!hasContent) { alert('Fill in at least a title and subject before analyzing.'); return; }
+
+  const btn = document.getElementById('analyze-btn');
+  const panel = document.getElementById('ai-analysis');
+  const content = document.getElementById('ai-analysis-content');
+  btn.textContent = '... thinking'; btn.disabled = true;
+  panel.style.display = 'block';
+  content.innerHTML = '<span style="color:var(--muted);letter-spacing:0.15em;font-size:11px;">READING YOUR BRIEF —</span>';
+  panel.scrollIntoView({ behavior: 'smooth' });
+
+  const storyBlock = (s.who||s.want||s.obstacle||s.action||s.fail||s.end) ? `\nSTORY ENGINE:\n1. Who: ${s.who||'—'}\n2. Want: ${s.want||'—'}\n3. Obstacle: ${s.obstacle||'—'}\n4. Action: ${s.action||'—'}\n5. Fail: ${s.fail||'—'}\n6. End: ${s.end||'—'}` : '';
+
+  try {
+    const text = await anthropicCall({
+      system: 'Voice: Michigan J. Frog meets Alan Kalter. IYK energy. High concept, broadly enjoyable. Reference, cross-reference, allusion, nostalgia.',
+      userContent: `Analyze this brief and return THREE things:\n\n1. HOOK ANALYSIS — Is the hook strong? Suggest 2 specific alternative hooks (visual + verbal + audio + text each). Each must contain curiosity, emotion, AND urgency.\n\n2. STORY GAP CHECK — Which of the Six Questions circles are fully drawn, which are thin, what one addition deepens the piece most.\n\n3. PLATFORM & FORMAT RECOMMENDATION — Which platform leads and why? Is the format right?\n\nSharp, no fluff. Talk like a smart collaborator.\n\nBRIEF:\nTitle: ${d.title}\nFormat: ${d.format||'—'}\nInspiration: ${d.inspo||'—'}\nReference: ${d.ref||'—'}\nLens: ${d.lens||'—'}\nSubject: ${d.subject||'—'}\nMessage: ${d.message||'—'}\nAudience: ${d.audience||'—'}\nPlatforms: ${d.platforms||'—'}\nHook Notes: ${d.hook||'—'}\nTech Notes: ${d.tech||'—'}\nThread: ${d.thread||'none'}${storyBlock}\n\nPlain text, section headers only, no markdown asterisks.`,
+      maxTokens: 1200
+    });
+    content.innerHTML = text.split('\n').map(line => {
+      if (line.match(/^[0-9]\./) || line.match(/^(HOOK|STORY|PLATFORM)/i)) return `<div style="font-family:'Bebas Neue',sans-serif;font-size:15px;color:var(--gold);letter-spacing:0.1em;margin-top:18px;margin-bottom:6px;">${line}</div>`;
+      if (line.trim() === '') return '<br>';
+      return `<div style="margin-bottom:4px;">${line}</div>`;
+    }).join('');
+  } catch(err) {
+    content.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}</span>`;
+  }
+  btn.textContent = '✦ Analyze'; btn.disabled = false;
 }
 
 // ─── PIPELINE ─────────────────────────────────────────────────────────────────
 
 const STAGES = [
-  { key: 'idea', label: 'Idea' },
-  { key: 'brief', label: 'Brief' },
-  { key: 'production', label: 'Production' },
-  { key: 'review', label: 'Review' },
-  { key: 'approved', label: 'Approved' },
-  { key: 'scheduled', label: 'Scheduled' },
-  { key: 'live', label: 'Live' },
-  { key: 'analytics', label: 'Analytics' }
+  { key: 'idea', label: 'Idea' }, { key: 'brief', label: 'Brief' },
+  { key: 'production', label: 'Production' }, { key: 'review', label: 'Review' },
+  { key: 'approved', label: 'Approved' }, { key: 'scheduled', label: 'Scheduled' },
+  { key: 'live', label: 'Live' }, { key: 'analytics', label: 'Analytics' }
 ];
 
 function renderPipeline() {
   const assets = load(STORAGE_KEYS.assets);
   const board = document.getElementById('pipeline-board');
   const grid = document.getElementById('all-assets-grid');
-
-  // Pipeline columns — show first 4 stages
   const shown = ['idea','brief','production','review'];
   board.innerHTML = shown.map(stageKey => {
     const stage = STAGES.find(s => s.key === stageKey);
     const items = assets.filter(a => a.status === stageKey);
-    return `
-      <div class="pipeline-col">
-        <div class="pipeline-col-header">
-          ${stage.label}
-          <span class="pipeline-count">${items.length}</span>
-        </div>
-        ${items.length === 0
-          ? '<div style="font-size:10px;color:var(--muted);padding:12px 0;text-align:center;letter-spacing:0.1em;">EMPTY</div>'
-          : items.map(a => `
-            <div class="pipeline-item" onclick="openAsset('${a.id}')">
-              <div class="pipeline-item-title">${a.title}</div>
-              <div class="pipeline-item-meta">${a.format || 'No format'} · ${a.created || ''}</div>
-            </div>
-          `).join('')}
-      </div>
-    `;
+    return `<div class="pipeline-col">
+      <div class="pipeline-col-header">${stage.label}<span class="pipeline-count">${items.length}</span></div>
+      ${items.length === 0 ? '<div style="font-size:10px;color:var(--muted);padding:12px 0;text-align:center;letter-spacing:0.1em;">EMPTY</div>' : items.map(a => `<div class="pipeline-item" onclick="openAsset('${a.id}')"><div class="pipeline-item-title">${a.title}</div><div class="pipeline-item-meta">${a.format||'No format'} · ${a.created||''}</div></div>`).join('')}
+    </div>`;
   }).join('');
-
-  // All assets grid
-  if (assets.length === 0) {
-    grid.innerHTML = '<div class="empty">No assets yet — start a brief to get moving</div>';
-    return;
-  }
-
+  if (assets.length === 0) { grid.innerHTML = '<div class="empty">No assets yet — start a brief to get moving</div>'; return; }
   grid.innerHTML = assets.map(a => `
     <div class="card" onclick="openAsset('${a.id}')">
-      <div class="card-meta">${a.created || ''}</div>
+      <div class="card-meta">${a.created||''}</div>
       <div class="card-title">${a.title}</div>
-      <div class="card-body">${a.message ? a.message.slice(0, 120) + (a.message.length > 120 ? '…' : '') : a.subject ? a.subject.slice(0, 120) + '…' : '—'}</div>
+      <div class="card-body">${a.message ? a.message.slice(0,120)+'…' : a.subject ? a.subject.slice(0,120)+'…' : '—'}</div>
       <div class="card-footer">
         <span class="status status-${a.status}">${a.status}</span>
         ${a.format ? `<span class="tag tag-format">${a.format}</span>` : ''}
         ${a.platforms ? a.platforms.split(',').slice(0,2).map(p => `<span class="tag tag-platform">${p.trim()}</span>`).join('') : ''}
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
-
-// ─── ASSET MODAL ──────────────────────────────────────────────────────────────
 
 function openAsset(id) {
   const assets = load(STORAGE_KEYS.assets);
   const a = assets.find(x => x.id === id);
   if (!a) return;
-
-  const stageOptions = STAGES.map(s =>
-    `<option value="${s.key}" ${a.status === s.key ? 'selected' : ''}>${s.label}</option>`
-  ).join('');
-
+  const stageOptions = STAGES.map(s => `<option value="${s.key}" ${a.status===s.key?'selected':''}>${s.label}</option>`).join('');
   document.getElementById('modal-content').innerHTML = `
     <div class="modal-title">${a.title}</div>
-    <div style="margin-bottom:16px; display:flex; align-items:center; gap:12px; flex-wrap:wrap;">
-      <span class="status status-${a.status}" id="modal-status-badge">${a.status}</span>
+    <div style="margin-bottom:16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <span class="status status-${a.status}">${a.status}</span>
       <span style="font-size:10px;color:var(--muted);letter-spacing:0.15em;">MOVE TO →</span>
-      <select onchange="updateStatus('${id}', this.value)" style="background:#0d0d0a;border:1px solid var(--border);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;padding:4px 8px;cursor:pointer;">
-        ${stageOptions}
-      </select>
+      <select onchange="updateStatus('${id}',this.value)" style="background:#0d0d0a;border:1px solid var(--border);color:var(--gold);font-family:'DM Mono',monospace;font-size:11px;padding:4px 8px;cursor:pointer;">${stageOptions}</select>
     </div>
-    ${row('Format', a.format)}
-    ${row('Inspiration', a.inspo)}
-    ${row('Reference', a.ref)}
-    ${row('Story Lens', a.lens)}
-    ${row('Subject / Theme', a.subject)}
-    ${row('Message', a.message)}
-    ${row('Audience', a.audience)}
-    ${row('Platforms', a.platforms)}
-    ${row('Hook Stack', a.hook)}
-    ${row('Technical Notes', a.tech)}
-    ${a.thread ? row('Thread Tie-In', a.thread) : ''}
-    <div style="margin-top:20px; display:flex; gap:10px;">
+    ${row('Format',a.format)}${row('Inspiration',a.inspo)}${row('Reference',a.ref)}${row('Story Lens',a.lens)}${row('Subject / Theme',a.subject)}${row('Message',a.message)}${row('Audience',a.audience)}${row('Platforms',a.platforms)}${row('Hook Stack',a.hook)}${row('Technical Notes',a.tech)}${a.thread?row('Thread Tie-In',a.thread):''}
+    <div style="margin-top:20px;display:flex;gap:10px;">
       <button class="btn btn-sm" onclick="editAsset('${id}')">Edit Brief</button>
       <button class="btn btn-danger btn-sm" onclick="deleteAsset('${id}')">Delete</button>
-    </div>
-  `;
-
+    </div>`;
   document.getElementById('asset-modal').classList.add('open');
 }
 
 function row(label, val) {
   if (!val) return '';
-  return `
-    <div class="brief-section">
-      <div class="brief-label">${label}</div>
-      <div style="font-size:12px;color:var(--offwhite);line-height:1.6;margin-top:3px;">${val}</div>
-    </div>
-  `;
+  return `<div class="brief-section"><div class="brief-label">${label}</div><div style="font-size:12px;color:var(--offwhite);line-height:1.6;margin-top:3px;">${val}</div></div>`;
 }
 
-function closeModal() {
-  document.getElementById('asset-modal').classList.remove('open');
-}
+function closeModal() { document.getElementById('asset-modal').classList.remove('open'); }
 
 function updateStatus(id, newStatus) {
   const assets = load(STORAGE_KEYS.assets);
@@ -1809,53 +948,30 @@ function updateStatus(id, newStatus) {
   assets[idx].status = newStatus;
   save(STORAGE_KEYS.assets, assets);
   renderPipeline();
-  document.getElementById('asset-modal').classList.remove('open');
+  closeModal();
 }
 
 function deleteAsset(id) {
-  if (!confirm('Delete this asset? This cannot be undone.')) return;
-  let assets = load(STORAGE_KEYS.assets);
-  assets = assets.filter(x => x.id !== id);
-  save(STORAGE_KEYS.assets, assets);
-  closeModal();
-  renderPipeline();
+  if (!confirm('Delete this asset?')) return;
+  save(STORAGE_KEYS.assets, load(STORAGE_KEYS.assets).filter(x => x.id !== id));
+  closeModal(); renderPipeline();
 }
 
 function editAsset(id) {
-  const assets = load(STORAGE_KEYS.assets);
-  const a = assets.find(x => x.id === id);
+  const a = load(STORAGE_KEYS.assets).find(x => x.id === id);
   if (!a) return;
-  closeModal();
-  showPanel('brief');
+  closeModal(); showPanel('brief');
   setTimeout(() => {
-    document.getElementById('b-title').value = a.title || '';
-    document.getElementById('b-inspo').value = a.inspo || '';
-    document.getElementById('b-ref').value = a.ref || '';
-    document.getElementById('b-subject').value = a.subject || '';
-    document.getElementById('b-message').value = a.message || '';
-    document.getElementById('b-platforms').value = a.platforms || '';
-    document.getElementById('b-audience').value = a.audience || '';
-    document.getElementById('b-hook').value = a.hook || '';
-    document.getElementById('b-tech').value = a.tech || '';
-    document.getElementById('b-thread').value = a.thread || '';
-    setSelectVal('b-format', a.format);
-    setSelectVal('b-lens', a.lens);
-    setSelectVal('b-status', a.status);
-    // Remove old entry so re-save replaces it
-    let all = load(STORAGE_KEYS.assets);
-    all = all.filter(x => x.id !== id);
-    save(STORAGE_KEYS.assets, all);
+    ['title','inspo','ref','subject','message','platforms','audience','hook','tech','thread'].forEach(f => { const el = document.getElementById('b-'+f); if(el) el.value = a[f]||''; });
+    setSelectVal('b-format',a.format); setSelectVal('b-lens',a.lens); setSelectVal('b-status',a.status);
+    save(STORAGE_KEYS.assets, load(STORAGE_KEYS.assets).filter(x => x.id !== id));
   }, 50);
 }
 
 function setSelectVal(id, val) {
   const el = document.getElementById(id);
   if (!el || !val) return;
-  for (let i = 0; i < el.options.length; i++) {
-    if (el.options[i].value === val || el.options[i].text === val) {
-      el.selectedIndex = i; return;
-    }
-  }
+  for (let i = 0; i < el.options.length; i++) { if (el.options[i].value===val||el.options[i].text===val) { el.selectedIndex=i; return; } }
 }
 
 // ─── INSPO LOG ────────────────────────────────────────────────────────────────
@@ -1863,18 +979,8 @@ function setSelectVal(id, val) {
 function saveInspo() {
   const title = getFormVal('i-title');
   if (!title) { alert('Give this inspiration a title.'); return; }
-  const entry = {
-    id: uid(),
-    title,
-    type: getFormVal('i-type'),
-    link: getFormVal('i-link'),
-    notes: getFormVal('i-notes'),
-    tags: getFormVal('i-tags'),
-    created: today()
-  };
-  const data = load(STORAGE_KEYS.inspo);
-  data.unshift(entry);
-  save(STORAGE_KEYS.inspo, data);
+  const entry = { id: uid(), title, type: getFormVal('i-type'), link: getFormVal('i-link'), notes: getFormVal('i-notes'), tags: getFormVal('i-tags'), created: today() };
+  const data = load(STORAGE_KEYS.inspo); data.unshift(entry); save(STORAGE_KEYS.inspo, data);
   ['i-title','i-link','i-notes','i-tags'].forEach(id => { document.getElementById(id).value = ''; });
   document.getElementById('i-type').selectedIndex = 0;
   renderInspo();
@@ -1883,101 +989,69 @@ function saveInspo() {
 function renderInspo() {
   const data = load(STORAGE_KEYS.inspo);
   const grid = document.getElementById('inspo-grid');
-  if (data.length === 0) {
-    grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No inspiration logged yet</div>';
-    return;
-  }
+  if (data.length === 0) { grid.innerHTML = '<div class="empty" style="grid-column:1/-1;">No inspiration logged yet</div>'; return; }
   grid.innerHTML = data.map(e => `
     <div class="inspo-card">
       <div class="card-meta">${e.type} · ${e.created}</div>
       <div class="inspo-card-title">${e.title}</div>
-      ${e.notes ? `<div class="inspo-card-note">${e.notes.slice(0, 140)}${e.notes.length > 140 ? '…' : ''}</div>` : ''}
+      ${e.notes ? `<div class="inspo-card-note">${e.notes.slice(0,140)}${e.notes.length>140?'…':''}</div>` : ''}
       <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;">
-        <div class="tags">
-          ${e.tags ? e.tags.split(',').map(t => `<span class="tag">${t.trim()}</span>`).join('') : ''}
-        </div>
+        <div class="tags">${e.tags ? e.tags.split(',').map(t=>`<span class="tag">${t.trim()}</span>`).join('') : ''}</div>
         <div style="display:flex;gap:6px;">
           ${e.link ? `<a href="${e.link}" target="_blank" style="font-size:9px;color:var(--gold);letter-spacing:0.1em;text-decoration:none;border-bottom:1px solid var(--gold-dim);">LINK ↗</a>` : ''}
           <button class="btn btn-danger btn-sm" onclick="deleteInspo('${e.id}')">✕</button>
         </div>
       </div>
-    </div>
-  `).join('');
+    </div>`).join('');
 }
 
-function deleteInspo(id) {
-  let data = load(STORAGE_KEYS.inspo);
-  data = data.filter(x => x.id !== id);
-  save(STORAGE_KEYS.inspo, data);
-  renderInspo();
-}
+function deleteInspo(id) { save(STORAGE_KEYS.inspo, load(STORAGE_KEYS.inspo).filter(x=>x.id!==id)); renderInspo(); }
 
 // ─── THE THREAD ───────────────────────────────────────────────────────────────
 
 function saveThread() {
   const text = getFormVal('t-text');
   if (!text) return;
-  const entry = {
-    id: uid(),
-    text,
-    platform: getFormVal('t-platform'),
-    type: getFormVal('t-type'),
-    created: today()
-  };
-  const data = load(STORAGE_KEYS.thread);
-  data.push(entry);
-  save(STORAGE_KEYS.thread, data);
-  document.getElementById('t-text').value = '';
-  document.getElementById('t-platform').value = '';
+  const entry = { id: uid(), text, platform: getFormVal('t-platform'), type: getFormVal('t-type'), created: today() };
+  const data = load(STORAGE_KEYS.thread); data.push(entry); save(STORAGE_KEYS.thread, data);
+  document.getElementById('t-text').value = ''; document.getElementById('t-platform').value = '';
   renderThread();
 }
 
 function renderThread() {
   const data = load(STORAGE_KEYS.thread);
   const log = document.getElementById('thread-log');
-  if (data.length === 0) {
-    log.innerHTML = '<div class="empty">The thread has not yet begun. He is still in the desert.</div>';
-    return;
-  }
+  if (data.length === 0) { log.innerHTML = '<div class="empty">The thread has not yet begun. He is still in the desert.</div>'; return; }
   log.innerHTML = data.map(e => `
     <div class="thread-item">
-      <div class="thread-date">${e.type} · ${e.platform || 'Unassigned'} · ${e.created}</div>
+      <div class="thread-date">${e.type} · ${e.platform||'Unassigned'} · ${e.created}</div>
       <div class="thread-text">${e.text}</div>
-      <div style="margin-top:8px;">
-        <button class="btn btn-danger btn-sm" onclick="deleteThread('${e.id}')">Remove</button>
-      </div>
-    </div>
-  `).join('');
+      <div style="margin-top:8px;"><button class="btn btn-danger btn-sm" onclick="deleteThread('${e.id}')">Remove</button></div>
+    </div>`).join('');
 }
 
-function deleteThread(id) {
-  let data = load(STORAGE_KEYS.thread);
-  data = data.filter(x => x.id !== id);
-  save(STORAGE_KEYS.thread, data);
-  renderThread();
-}
+function deleteThread(id) { save(STORAGE_KEYS.thread, load(STORAGE_KEYS.thread).filter(x=>x.id!==id)); renderThread(); }
 
 // ─── INSPO ANALYZER ───────────────────────────────────────────────────────────
 
 const AZ_FIELDS = [
-  { key: 'subject',                label: 'Subject',                                hint: 'What is being depicted' },
-  { key: 'method',                 label: 'Method (Technique Mechanics)',           hint: 'Medium, surface, sequence of operations' },
-  { key: 'composition',            label: 'Composition (Geometry & Axis)',          hint: 'Ratios, focal points, balance, negative space' },
-  { key: 'structural_principles',  label: 'Structural & Compositional Principles',  hint: 'The mechanical rules at work — no attribution' },
-  { key: 'method_to_achieve',      label: 'Method to Achieve the Look',             hint: 'Step-by-step mechanics' },
-  { key: 'technical_specs',        label: 'Technical Specs / Settings',             hint: 'Equipment by category — never brand names' }
+  { key: 'subject',               label: 'Subject' },
+  { key: 'method',                label: 'Method (Technique Mechanics)' },
+  { key: 'composition',           label: 'Composition (Geometry & Axis)' },
+  { key: 'structural_principles', label: 'Structural & Compositional Principles' },
+  { key: 'method_to_achieve',     label: 'Method to Achieve the Look' },
+  { key: 'technical_specs',       label: 'Technical Specs / Settings' }
 ];
 
 let _azState = null;
 
 function _azLoad() {
   if (_azState) return _azState;
-  _azState = load(STORAGE_KEYS.analyzer);
-  if (!Array.isArray(_azState)) _azState = (_azState && typeof _azState === 'object') ? _azState : null;
+  const stored = localStorage.getItem(STORAGE_KEYS.analyzer);
+  try { _azState = stored ? JSON.parse(stored) : null; } catch(e) { _azState = null; }
   if (!_azState || Array.isArray(_azState)) {
-    _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '', references: [] };
+    _azState = { title:'', bias:'', notes:'', image_b64:'', mime:'', parsed:null, choices:{}, customs:{}, generated:'', refine:'', deliverable_image:null, deliverable_text:'', references:[] };
   }
-  // ensure new fields exist on older states
   if (!('refine' in _azState)) _azState.refine = '';
   if (!('deliverable_image' in _azState)) _azState.deliverable_image = null;
   if (!('deliverable_text' in _azState)) _azState.deliverable_text = '';
@@ -1985,122 +1059,88 @@ function _azLoad() {
   return _azState;
 }
 
-function _azSave() {
-  localStorage.setItem(STORAGE_KEYS.analyzer, JSON.stringify(_azState));
-}
+function _azSave() { localStorage.setItem(STORAGE_KEYS.analyzer, JSON.stringify(_azState)); }
 
 function toast(msg) {
   const el = document.getElementById('toast');
-  el.textContent = msg;
-  el.classList.add('show');
-  clearTimeout(el._t);
-  el._t = setTimeout(() => el.classList.remove('show'), 1800);
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(el._t); el._t = setTimeout(() => el.classList.remove('show'), 1800);
 }
 
 function initAnalyzer() {
   const s = _azLoad();
-  document.getElementById('az-title').value = s.title || '';
-  document.getElementById('az-bias').value = s.bias || '';
-  document.getElementById('az-notes').value = s.notes || '';
+  document.getElementById('az-title').value = s.title||'';
+  document.getElementById('az-bias').value = s.bias||'';
+  document.getElementById('az-notes').value = s.notes||'';
   if (s.image_b64) {
     const img = document.getElementById('az-preview');
-    img.src = 'data:' + (s.mime || 'image/jpeg') + ';base64,' + s.image_b64;
+    img.src = 'data:'+(s.mime||'image/jpeg')+';base64,'+s.image_b64;
     img.style.display = 'block';
     document.getElementById('az-dz-label').textContent = 'Image loaded — drop another to replace';
+  } else {
+    const img = document.getElementById('az-preview');
+    img.style.display = 'none'; img.src = '';
+    document.getElementById('az-dz-label').textContent = 'Drop reference image here';
   }
-  if (s.parsed) {
-    renderBreakdown(s.parsed);
-    document.getElementById('az-breakdown').style.display = 'block';
-  }
+  if (s.parsed) { renderBreakdown(s.parsed); document.getElementById('az-breakdown').style.display = 'block'; }
+  else { document.getElementById('az-breakdown').style.display = 'none'; }
   if (s.generated) {
     const out = document.getElementById('az-prompt-output');
-    out.value = s.generated;
-    out.style.display = 'block';
+    out.value = s.generated; out.style.display = 'block';
     document.getElementById('az-prompt-hint').style.display = 'block';
     document.getElementById('az-export-row').style.display = 'flex';
     document.getElementById('az-execute-section').style.display = 'block';
   }
-  if (s.refine) {
-    const r = document.getElementById('az-refine');
-    if (r) r.value = s.refine;
-  }
+  if (s.refine) { const r = document.getElementById('az-refine'); if(r) r.value = s.refine; }
   if (s.deliverable_image) {
     const img = document.getElementById('az-result-img');
-    img.src = 'data:' + (s.deliverable_image.mime || 'image/png') + ';base64,' + s.deliverable_image.data;
+    img.src = 'data:'+(s.deliverable_image.mime||'image/png')+';base64,'+s.deliverable_image.data;
     document.getElementById('az-deliverable-image').style.display = 'block';
     document.getElementById('az-deliverable').style.display = 'block';
   }
   if (s.deliverable_text) {
     const t = document.getElementById('az-deliverable-text');
-    t.textContent = s.deliverable_text;
-    t.style.display = 'block';
+    t.textContent = s.deliverable_text; t.style.display = 'block';
     document.getElementById('az-deliverable-text-actions').style.display = 'flex';
     document.getElementById('az-deliverable').style.display = 'block';
   }
   renderRefStrip();
-  bindAnalyzerInputs();
-  bindDropZone();
-  bindRefZone();
-  bindClipboardPaste();
+  bindAnalyzerInputs(); bindDropZone(); bindRefZone(); bindClipboardPaste();
+  // Kick Telegram polling on first analyzer view
+  startTelegramPolling();
 }
 
 function bindAnalyzerInputs() {
   const tEl = document.getElementById('az-title');
-  const bEl = document.getElementById('az-bias');
-  const nEl = document.getElementById('az-notes');
-  const rEl = document.getElementById('az-refine');
-  const pEl = document.getElementById('az-prompt-output');
   if (tEl._bound) return;
-  tEl._bound = bEl._bound = nEl._bound = true;
+  tEl._bound = true;
   tEl.addEventListener('input', () => { _azState.title = tEl.value; _azSave(); });
-  bEl.addEventListener('input', () => { _azState.bias = bEl.value; _azSave(); });
-  nEl.addEventListener('input', () => { _azState.notes = nEl.value; _azSave(); });
-  if (rEl && !rEl._bound) {
-    rEl._bound = true;
-    rEl.addEventListener('input', () => { _azState.refine = rEl.value; _azSave(); });
-  }
-  if (pEl && !pEl._bound) {
-    pEl._bound = true;
-    pEl.addEventListener('input', () => { _azState.generated = pEl.value; _azSave(); });
-  }
+  document.getElementById('az-bias').addEventListener('input', e => { _azState.bias = e.target.value; _azSave(); });
+  document.getElementById('az-notes').addEventListener('input', e => { _azState.notes = e.target.value; _azSave(); });
+  const rEl = document.getElementById('az-refine');
+  if (rEl) rEl.addEventListener('input', e => { _azState.refine = e.target.value; _azSave(); });
+  const pEl = document.getElementById('az-prompt-output');
+  if (pEl) pEl.addEventListener('input', e => { _azState.generated = e.target.value; _azSave(); });
 }
 
 function bindDropZone() {
   const dz = document.getElementById('az-dropzone');
   const input = document.getElementById('az-file');
-  if (dz._bound) return;
-  dz._bound = true;
-
-  ['dragenter', 'dragover'].forEach(ev => {
-    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); });
-  });
-  ['dragleave', 'drop'].forEach(ev => {
-    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); });
-  });
-  dz.addEventListener('drop', (e) => {
-    const file = e.dataTransfer?.files?.[0];
-    if (file) handleImageFile(file);
-  });
-  input.addEventListener('change', (e) => {
-    const file = e.target.files?.[0];
-    if (file) handleImageFile(file);
-  });
+  if (dz._bound) return; dz._bound = true;
+  ['dragenter','dragover'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); }));
+  ['dragleave','drop'].forEach(ev => dz.addEventListener(ev, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); }));
+  dz.addEventListener('drop', e => { const f = e.dataTransfer?.files?.[0]; if(f) handleImageFile(f); });
+  input.addEventListener('change', e => { const f = e.target.files?.[0]; if(f) handleImageFile(f); });
 }
 
 function handleImageFile(file) {
-  if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) {
-    alert('Use JPG, PNG, or WEBP images only.');
-    return;
-  }
+  if (!/^image\/(jpeg|png|webp)$/i.test(file.type)) { alert('Use JPG, PNG, or WEBP images only.'); return; }
   const reader = new FileReader();
-  reader.onload = (e) => {
+  reader.onload = e => {
     resizeToBase64(e.target.result, 1280, 0.85).then(({ b64, mime }) => {
-      _azState.image_b64 = b64;
-      _azState.mime = mime;
-      _azSave();
+      _azState.image_b64 = b64; _azState.mime = mime; _azSave();
       const img = document.getElementById('az-preview');
-      img.src = 'data:' + mime + ';base64,' + b64;
-      img.style.display = 'block';
+      img.src = 'data:'+mime+';base64,'+b64; img.style.display = 'block';
       document.getElementById('az-dz-label').textContent = 'Image loaded — drop another to replace';
       toast('Image ready');
     });
@@ -2109,119 +1149,66 @@ function handleImageFile(file) {
 }
 
 function resizeToBase64(dataUrl, maxDim, quality) {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const img = new Image();
     img.onload = () => {
       let w = img.width, h = img.height;
-      if (w > maxDim || h > maxDim) {
-        const r = Math.min(maxDim / w, maxDim / h);
-        w = Math.round(w * r); h = Math.round(h * r);
-      }
+      if (w > maxDim || h > maxDim) { const r = Math.min(maxDim/w, maxDim/h); w = Math.round(w*r); h = Math.round(h*r); }
       const canvas = document.createElement('canvas');
       canvas.width = w; canvas.height = h;
-      const ctx = canvas.getContext('2d');
-      ctx.drawImage(img, 0, 0, w, h);
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
       const out = canvas.toDataURL('image/jpeg', quality);
-      const b64 = out.split(',')[1];
-      resolve({ b64, mime: 'image/jpeg' });
+      resolve({ b64: out.split(',')[1], mime: 'image/jpeg' });
     };
     img.src = dataUrl;
   });
 }
 
-const INSPO_SYSTEM = (
-  "You are a STRUCTURAL DESIGN ANALYST for The Old Line Company. Your output is "
-  + "consumed downstream by AI assistants that have aggressive content/IP guardrails. "
-  + "To prevent those guardrails from misreading your work as imitation of any specific "
-  + "creator, you operate under a hard rule: describe ONLY activity-level mechanics — "
-  + "geometry, ratios, color values, type properties, lighting setup, technique steps, "
-  + "equipment categories. NEVER name a designer, photographer, illustrator, director, "
-  + "studio, firm, brand, franchise, school, movement, decade, era, or country-of-origin. "
-  + "If a recognizable reference would be useful, translate it instead into its underlying "
-  + "structural grammar. Your job is to describe HOW, never WHO."
-);
-
-function _inspoPrompt(notes) {
-  return `Analyze the attached reference image and return STRICT JSON only — no markdown, no commentary.
-
-HARD RULES (violations are unacceptable):
-- DO NOT name any designer, illustrator, photographer, director, studio, firm, brand, franchise, IP, school, movement, decade, era, or country-of-origin shorthand.
-- DO NOT use phrases like "in the style of", "reminiscent of", "Bauhaus", "Art Deco", "1970s", "Japanese", "mid-century", "Saul Bass-style", etc.
-- DESCRIBE every observation in mechanical / structural / activity terms only:
-  * composition: angles, ratios, grid systems, focal points, axis, balance, negative-space distribution
-  * color: HSL ranges, value relationships, saturation behavior, palette structure (count + relationships, NOT named movements)
-  * form/type: weight, axis, contrast ratio, kerning behavior, geometric vs humanist construction
-  * technique: discrete steps, tools/categories (not brand names), surface treatments
-  * equipment: sensor format category, focal length category, lighting setup, exposure behavior — NEVER brand names
-- Each "option" is an alternative STRUCTURAL DIRECTION (different mechanics) the creator could take for a NEW piece, not a reference to anyone's prior work.
-- Be specific and measurable wherever possible.
-
-For each dimension provide:
-- "observed": a concise description in pure mechanics (1-3 sentences). State numbers, ratios, geometry.
-- "options": THREE distinct alternative structural directions (under 25 words each).
-
-Return EXACTLY this JSON shape and nothing else:
-
-{
-  "subject": {"observed": "...", "options": ["...", "...", "..."]},
-  "method": {"observed": "...", "options": ["...", "...", "..."]},
-  "composition": {"observed": "...", "options": ["...", "...", "..."]},
-  "structural_principles": {"observed": "...", "philosophy": "1-2 sentence read on the mechanical philosophy", "options": ["...", "...", "..."]},
-  "method_to_achieve": {"observed": "...", "options": ["...", "...", "..."]},
-  "technical_specs": {"observed": "...", "options": ["...", "...", "..."]}
-}
-
-Creator notes (bias the analysis if present): ${notes || '(none)'}
-`;
-}
-
-function _extractJson(text) {
-  // strip code fences
-  const fenced = text.match(/```(?:json)?\s*(\{[\s\S]*?\})\s*```/);
-  if (fenced) text = fenced[1];
-  const m = text.match(/\{[\s\S]*\}/);
-  if (!m) throw new Error('No JSON object found in model response');
-  return JSON.parse(m[0]);
-}
-
 async function runImageAnalysis() {
   const s = _azLoad();
   if (!s.image_b64) { alert('Drop an image first.'); return; }
+  const key = requireKey('anthropic');
+  if (!key) return;
+
   const btn = document.getElementById('az-analyze-btn');
   const status = document.getElementById('az-status');
   btn.disabled = true; btn.textContent = '... analyzing';
   status.textContent = 'CLAUDE READING THE FRAME —';
+
   try {
-    const text = await callAnthropic({
-      system: INSPO_SYSTEM,
-      prompt: _inspoPrompt(s.bias || ''),
-      imageBase64: s.image_b64,
-      imageMime: s.mime || 'image/jpeg',
-      maxTokens: 3000
+    const composedSystem = OLC_SYSTEM + '\n\nYou are a precision image analyst for The Old Line Company. Deconstruct reference images into actionable creative directives. Return strict JSON only — no preamble, no markdown fences.';
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1500,
+        system: composedSystem,
+        messages: [{ role:'user', content: [
+          { type:'image', source:{ type:'base64', media_type:s.mime||'image/jpeg', data:s.image_b64 } },
+          { type:'text', text:`Analyze this image. Return a JSON object with exactly these keys: subject, method, composition, structural_principles, method_to_achieve, technical_specs.\n\nEach key maps to an object with:\n- "observed": what you directly see\n- "philosophy": the underlying principle (1-2 sentences)\n- "options": array of 2 alternative creative directions\n\nPrecise and production-actionable.${s.bias ? '\n\nCreator bias: '+s.bias : ''}\n\nReturn ONLY the JSON object.` }
+        ]}]
+      })
     });
+    if (!res.ok) { const t = await res.text(); throw new Error(`API ${res.status}: ${t.slice(0,200)}`); }
+    const apiData = await res.json();
+    const rawText = apiData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
     let parsed;
-    try { parsed = _extractJson(text); }
-    catch (e) {
-      console.warn('Raw analyzer response:', text);
-      status.innerHTML = '<span style="color:var(--red);">Could not parse model output. Raw response logged to console.</span>';
-      return;
-    }
-    _azState.parsed = parsed;
-    _azState.choices = {};
-    _azState.customs = {};
-    _azSave();
+    try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim()); }
+    catch(e) { status.innerHTML = '<span style="color:var(--red);">Could not parse response. Check console.</span>'; console.warn('Raw:', rawText); return; }
+    _azState.parsed = parsed; _azState.choices = {}; _azState.customs = {}; _azSave();
     renderBreakdown(parsed);
     document.getElementById('az-breakdown').style.display = 'block';
     status.textContent = 'BREAKDOWN READY — pick directions below';
-    document.getElementById('az-breakdown').scrollIntoView({ behavior: 'smooth' });
-  } catch (err) {
+    document.getElementById('az-breakdown').scrollIntoView({ behavior:'smooth' });
+  } catch(err) {
     status.innerHTML = `<span style="color:var(--red);">Analysis failed — ${err.message}</span>`;
   } finally {
     btn.disabled = false; btn.textContent = '✦ Analyze Image';
   }
 }
 
-function _esc(s) { return (s == null ? '' : String(s)).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function _esc(s) { return (s==null?'':String(s)).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
 
 function renderBreakdown(parsed) {
   const container = document.getElementById('az-breakdown-blocks');
@@ -2232,250 +1219,196 @@ function renderBreakdown(parsed) {
     const opts = Array.isArray(node.options) ? node.options : [];
     const selected = _azState.choices[f.key] ?? 'observed';
     const custom = _azState.customs[f.key] || '';
-
-    const choices = [
-      { id: 'observed', label: 'KEEP OBSERVED', text: observed || '(no description)' },
-      ...opts.map((o, i) => ({ id: 'opt'+i, label: 'OPTION ' + String.fromCharCode(65+i), text: o }))
-    ];
-
+    const choices = [{ id:'observed', label:'KEEP OBSERVED', text:observed||'(no description)' }, ...opts.map((o,i)=>({ id:'opt'+i, label:'OPTION '+String.fromCharCode(65+i), text:o }))];
     const choiceHtml = choices.map(c => `
-      <label class="choice-row ${selected === c.id ? 'selected' : ''}" data-testid="analyzer-choice-${f.key}-${c.id}">
-        <input type="radio" name="az-${f.key}" value="${c.id}" ${selected === c.id ? 'checked' : ''} onchange="selectChoice('${f.key}','${c.id}')">
+      <label class="choice-row ${selected===c.id?'selected':''}" data-testid="analyzer-choice-${f.key}-${c.id}">
+        <input type="radio" name="az-${f.key}" value="${c.id}" ${selected===c.id?'checked':''} onchange="selectChoice('${f.key}','${c.id}')">
         <div class="choice-text"><span class="choice-tag">${c.label}</span>${_esc(c.text)}</div>
-      </label>
-    `).join('');
-
+      </label>`).join('');
     const customSelected = selected === 'custom';
-    const customHtml = `
-      <label class="choice-row ${customSelected ? 'selected' : ''}">
-        <input type="radio" name="az-${f.key}" value="custom" ${customSelected ? 'checked' : ''} onchange="selectChoice('${f.key}','custom')">
-        <div class="choice-text" style="width:100%;">
-          <span class="choice-tag">WRITE YOUR OWN</span>
-          <textarea class="breakdown-custom" placeholder="Your direction for ${f.label.toLowerCase()}..." oninput="updateCustom('${f.key}', this.value)" data-testid="analyzer-custom-${f.key}">${_esc(custom)}</textarea>
+    return `<div class="breakdown-block" data-testid="analyzer-block-${f.key}">
+      <div class="breakdown-label">${f.label}</div>
+      <div class="breakdown-observed">${_esc(observed)||'<em>no description returned</em>'}</div>
+      ${philosophy ? `<div class="breakdown-philosophy">${_esc(philosophy)}</div>` : ''}
+      ${choiceHtml}
+      <label class="choice-row ${customSelected?'selected':''}">
+        <input type="radio" name="az-${f.key}" value="custom" ${customSelected?'checked':''} onchange="selectChoice('${f.key}','custom')">
+        <div class="choice-text" style="width:100%;"><span class="choice-tag">WRITE YOUR OWN</span>
+          <textarea class="breakdown-custom" placeholder="Your direction for ${f.label.toLowerCase()}..." oninput="updateCustom('${f.key}',this.value)">${_esc(custom)}</textarea>
         </div>
       </label>
-    `;
-
-    const philosophyBlock = philosophy
-      ? `<div class="breakdown-philosophy">${_esc(philosophy)}</div>`
-      : '';
-
-    return `
-      <div class="breakdown-block" data-testid="analyzer-block-${f.key}">
-        <div class="breakdown-label">${f.label}</div>
-        <div class="breakdown-observed">${_esc(observed) || '<em>no description returned</em>'}</div>
-        ${philosophyBlock}
-        ${choiceHtml}
-        ${customHtml}
-      </div>
-    `;
+    </div>`;
   }).join('');
 }
 
 function selectChoice(fieldKey, choiceId) {
-  _azState.choices[fieldKey] = choiceId;
-  _azSave();
-  document.querySelectorAll(`[data-testid^="analyzer-block-${fieldKey}"] .choice-row`).forEach(r => r.classList.remove('selected'));
+  _azState.choices[fieldKey] = choiceId; _azSave();
+  document.querySelectorAll(`[data-testid^="analyzer-block-${fieldKey}"] .choice-row`).forEach(r=>r.classList.remove('selected'));
   const radio = document.querySelector(`input[name="az-${fieldKey}"][value="${choiceId}"]`);
   if (radio) radio.closest('.choice-row').classList.add('selected');
 }
 
-function updateCustom(fieldKey, val) {
-  _azState.customs[fieldKey] = val;
-  _azSave();
-}
+function updateCustom(fieldKey, val) { _azState.customs[fieldKey] = val; _azSave(); }
 
 function _resolveChoice(f) {
-  const node = (_azState.parsed || {})[f.key] || {};
+  const node = (_azState.parsed||{})[f.key]||{};
   const sel = _azState.choices[f.key] ?? 'observed';
-  if (sel === 'custom') return _azState.customs[f.key] || '';
-  if (sel === 'observed') {
-    const o = node.observed || '';
-    return f.key === 'structural_principles' && node.philosophy ? `${o} — ${node.philosophy}` : o;
-  }
-  const m = sel.match(/^opt(\d+)$/);
-  if (m) return (node.options || [])[Number(m[1])] || '';
+  if (sel==='custom') return _azState.customs[f.key]||'';
+  if (sel==='observed') { const o=node.observed||''; return f.key==='structural_principles'&&node.philosophy ? `${o} — ${node.philosophy}` : o; }
+  const m = sel.match(/^opt(\d+)$/); if(m) return (node.options||[])[Number(m[1])]||'';
   return '';
-}
-
-function _buildDirective({ title, subject, method, composition, structural_principles, method_to_achieve, technical_specs, notes }) {
-  const _s = v => (typeof v === 'string' ? v.trim() : '');
-  const t = _s(title) || 'Untitled directive';
-  return [
-    `# OPERATING DIRECTIVE — ${t}`,
-    ``,
-    `You are an executor producing a NEW, ORIGINAL piece. The structure below is a STRUCTURAL CONSTRAINT SET — composition geometry, color systems, type/form properties, technique mechanics. Within this structure an infinite number of valid choices exist. MAKE YOUR OWN CHOICES.`,
-    ``,
-    `READ THIS CAREFULLY:`,
-    `- The constraints describe HOW (mechanics), not WHO (no creator, firm, era is referenced).`,
-    `- Do not interpret any line below as 'in the style of' anyone or anything.`,
-    `- Your output must be entirely original. The constraints define the structural grammar; you create freely within it.`,
-    `- If a constraint feels under-defined, fill it with your own original choice. That is the point.`,
-    ``,
-    `## SUBJECT`,
-    _s(subject) || `(creator's choice within OLC voice)`,
-    ``,
-    `## METHOD (technique mechanics)`,
-    _s(method) || `(creator's choice)`,
-    ``,
-    `## COMPOSITION (geometry / axis / ratios / focal behavior)`,
-    _s(composition) || `(creator's choice)`,
-    ``,
-    `## STRUCTURAL & COMPOSITIONAL PRINCIPLES`,
-    _s(structural_principles) || `(creator's choice)`,
-    ``,
-    `## METHOD TO ACHIEVE THE LOOK (sequence of operations)`,
-    _s(method_to_achieve) || `(creator's choice)`,
-    ``,
-    `## TECHNICAL SPECS / SETTINGS (categories, never brand names)`,
-    _s(technical_specs) || `(creator's choice)`,
-    ``,
-    `## CREATOR NOTES`,
-    _s(notes) || `(none)`,
-    ``,
-    `## DELIVERY RULES`,
-    `- Honor the structural constraints as a grammar, not a costume.`,
-    `- Make and disclose your specific choices for any element that was creator's-choice.`,
-    `- Do not name or invoke any prior creator, brand, or work in your output or rationale.`,
-    `- Surface the choices you made and the mechanical reasoning behind them.`
-  ].join('\n');
 }
 
 async function generateDirective() {
   const s = _azLoad();
   if (!s.parsed) { alert('Run image analysis first.'); return; }
-  const body = { title: s.title || '', notes: s.notes || '' };
-  AZ_FIELDS.forEach(f => { body[f.key] = _resolveChoice(f) || ''; });
-  _azState.generated = _buildDirective(body);
-  _azSave();
-  const out = document.getElementById('az-prompt-output');
-  out.value = _azState.generated;
-  out.style.display = 'block';
-  document.getElementById('az-prompt-hint').style.display = 'block';
-  document.getElementById('az-export-row').style.display = 'flex';
-  document.getElementById('az-execute-section').style.display = 'block';
-  out.scrollIntoView({ behavior: 'smooth' });
-  toast('Prompt generated — edit before executing if you like');
+  const choices = {};
+  AZ_FIELDS.forEach(f => { choices[f.key] = _resolveChoice(f)||''; });
+  try {
+    const text = await anthropicCall({
+      system: 'You are a directive writer. Produce precise, production-ready brief prompts for an executor to produce final deliverables. Second person imperative. Specific, sequential, unambiguous.',
+      userContent: `Write a complete production directive.\n\nProject: ${s.title||'Untitled'}\nSubject: ${choices.subject||'—'}\nMethod: ${choices.method||'—'}\nComposition: ${choices.composition||'—'}\nStructural Principles: ${choices.structural_principles||'—'}\nMethod to Achieve: ${choices.method_to_achieve||'—'}\nTechnical Specs: ${choices.technical_specs||'—'}\nDirector notes: ${s.notes||'none'}\n\nSingle cohesive block, no bullets, no headers. 200-350 words.`,
+      maxTokens: 1000
+    });
+    _azState.generated = text.trim(); _azSave();
+    const out = document.getElementById('az-prompt-output');
+    out.value = _azState.generated; out.style.display = 'block';
+    document.getElementById('az-prompt-hint').style.display = 'block';
+    document.getElementById('az-export-row').style.display = 'flex';
+    document.getElementById('az-execute-section').style.display = 'block';
+    out.scrollIntoView({ behavior:'smooth' });
+    toast('Prompt generated — edit before executing if you like');
+  } catch(err) { alert('Generate failed: '+err.message); }
 }
 
-async function downloadDocx() {
+async function executeTreatment() {
   const s = _azLoad();
-  if (!s.generated && !s.parsed) { alert('Generate the prompt first.'); return; }
-  const title = s.title || 'OLC Inspo Analysis';
-  const dateStr = new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-
-  const sections = AZ_FIELDS.map(f => {
-    const node = (s.parsed || {})[f.key] || {};
-    const observed = (node.observed || '').trim();
-    const chosen = (_resolveChoice(f) || '').trim();
-    return `
-      <h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;margin-top:18pt;margin-bottom:6pt;">${_esc(f.label)}</h2>
-      <p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#333;"><b>Observed:</b> ${_esc(observed) || '—'}</p>
-      <p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#333;"><b>Direction chosen:</b> ${_esc(chosen) || '—'}</p>`;
-  }).join('');
-
-  const imgBlock = s.image_b64
-    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Reference</h2>
-       <img src="data:${s.mime || 'image/jpeg'};base64,${s.image_b64}" style="max-width:400px;display:block;" />`
-    : '';
-
-  const notesBlock = (s.notes || '').trim()
-    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Work Product Notes</h2>
-       <p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#333;white-space:pre-wrap;">${_esc(s.notes.trim())}</p>`
-    : '';
-
-  const promptBlock = (s.generated || '').trim()
-    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Brief Prompt (for executor)</h2>
-       <pre style="font-family:'Courier New',monospace;font-size:10pt;line-height:1.45;background:#f6f6f6;padding:10pt;border:1px solid #ddd;white-space:pre-wrap;">${_esc(s.generated.trim())}</pre>`
-    : '';
-
-  const treatmentBlock = (s.deliverable_text || '').trim()
-    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Generated Treatment</h2>
-       <div style="font-family:Calibri,Arial,sans-serif;font-size:11pt;line-height:1.5;color:#222;white-space:pre-wrap;">${_esc(s.deliverable_text.trim())}</div>`
-    : '';
-
-  const visualBlock = (s.deliverable_image && s.deliverable_image.data)
-    ? `<h2 style="font-family:Calibri,Arial,sans-serif;font-size:14pt;color:#222;">Generated Visual</h2>
-       <img src="data:${s.deliverable_image.mime || 'image/png'};base64,${s.deliverable_image.data}" style="max-width:480px;display:block;" />`
-    : '';
-
-  const html = `<!DOCTYPE html>
-<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
-<head>
-<meta charset="utf-8">
-<title>${_esc(title)}</title>
-<!--[if gte mso 9]><xml><w:WordDocument><w:View>Print</w:View><w:Zoom>100</w:Zoom></w:WordDocument></xml><![endif]-->
-<style>@page { size: 8.5in 11in; margin: 0.75in; }</style>
-</head>
-<body style="font-family:Calibri,Arial,sans-serif;color:#222;">
-<h1 style="font-family:Calibri,Arial,sans-serif;font-size:22pt;color:#111;margin-bottom:0;">${_esc(title)}</h1>
-<p style="font-family:Calibri,Arial,sans-serif;font-size:11pt;color:#666;font-style:italic;margin-top:4pt;">The Old Line Company  •  ${dateStr}</p>
-${imgBlock}
-<h1 style="font-family:Calibri,Arial,sans-serif;font-size:18pt;color:#111;margin-top:24pt;">Breakdown &amp; Direction</h1>
-${sections}
-${notesBlock}
-${promptBlock}
-${treatmentBlock}
-${visualBlock}
-</body></html>`;
-
-  const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
-  const safeTitle = title.replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 60);
-  const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 16);
-  const filename = `${safeTitle}_${ts}.doc`;
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = filename; document.body.appendChild(a); a.click();
-  setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 1000);
-  toast('Downloaded — opens in Word/Google Docs');
+  const promptEl = document.getElementById('az-prompt-output');
+  const currentPrompt = (promptEl&&promptEl.value)||s.generated;
+  if (!currentPrompt||!currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
+  const status = document.getElementById('az-execute-status');
+  const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
+  btns.forEach(b=>b.disabled=true);
+  status.innerHTML = '<span style="color:var(--gold);">DRAFTING TREATMENT —</span>';
+  try {
+    const key = requireKey('anthropic');
+    if (!key) { btns.forEach(b=>b.disabled=false); return; }
+    const composedSystem = OLC_SYSTEM + '\n\nSenior creative treatment writer for The Old Line Company. Precise, cinematic, brand-fluent. If reference images are attached, read their structural mechanics and fold them into the treatment as additional constraints.';
+    let userContent;
+    if (s.references&&s.references.length) {
+      userContent = [...s.references.map(r=>({ type:'image', source:{ type:'base64', media_type:r.mime_type, data:r.data } })), { type:'text', text:`Write a full creative treatment.\n\nDIRECTIVE:\n${currentPrompt}\n${s.refine?'\nREFINEMENT: '+s.refine:''}\n\nStructure: CONCEPT → VISUAL EXECUTION → TECHNICAL APPROACH → PLATFORM NOTES\nPresent tense. Prose. No bullets.` }];
+    } else {
+      userContent = `Write a full creative treatment.\n\nDIRECTIVE:\n${currentPrompt}\n${s.refine?'\nREFINEMENT: '+s.refine:''}\n\nStructure: CONCEPT → VISUAL EXECUTION → TECHNICAL APPROACH → PLATFORM NOTES\nPresent tense. Prose. No bullets.`;
+    }
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+      body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000, system:composedSystem, messages:[{role:'user',content:userContent}] })
+    });
+    if (!res.ok) { const t=await res.text(); throw new Error(`API ${res.status}: ${t.slice(0,200)}`); }
+    const apiData = await res.json();
+    const text = apiData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
+    _azState.deliverable_text = text.trim(); _azSave();
+    const t = document.getElementById('az-deliverable-text');
+    t.textContent = _azState.deliverable_text; t.style.display = 'block';
+    document.getElementById('az-deliverable-text-actions').style.display = 'flex';
+    document.getElementById('az-deliverable').style.display = 'block';
+    document.getElementById('az-deliverable').scrollIntoView({ behavior:'smooth' });
+    status.innerHTML = '<span style="color:var(--green);">TREATMENT READY</span>';
+    toast('Treatment generated');
+  } catch(err) {
+    status.innerHTML = `<span style="color:var(--red);">Treatment failed — ${err.message}</span>`;
+  } finally { btns.forEach(b=>b.disabled=false); }
 }
 
-function copyFormatted() {
+async function executeVisual() {
   const s = _azLoad();
+  const promptEl = document.getElementById('az-prompt-output');
+  const currentPrompt = (promptEl&&promptEl.value)||s.generated;
+  if (!currentPrompt||!currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
+  const openaiKey = requireKey('openai');
+  if (!openaiKey) return;
+  const anthropicKey = requireKey('anthropic');
+  if (!anthropicKey) return;
+
+  const status = document.getElementById('az-execute-status');
+  const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
+  btns.forEach(b=>b.disabled=true);
+  status.innerHTML = '<span style="color:var(--gold);">RENDERING — this can take 15-40s</span>';
+
+  try {
+    // Claude distills directive into clean DALL-E prompt (OLC_SYSTEM composed inside anthropicCall)
+    const dallePrompt = await anthropicCall({
+      system: 'Convert creative production directives into clean DALL-E 3 image generation prompts. 150 words max. Visual description only — subject, composition, lighting, color, texture, style, mood. No meta-instructions.',
+      userContent: `Convert to DALL-E 3 prompt:\n\n${currentPrompt}${s.refine?'\n\nRefinement: '+s.refine:''}`,
+      maxTokens: 400
+    });
+
+    const res = await fetch('https://api.openai.com/v1/images/generations', {
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+openaiKey},
+      body:JSON.stringify({ model:'dall-e-3', prompt:dallePrompt, n:1, size:'1024x1024', response_format:'b64_json' })
+    });
+    if (!res.ok) { const t=await res.text(); throw new Error(`OpenAI ${res.status}: ${t.slice(0,200)}`); }
+    const data = await res.json();
+    const imgData = data.data[0].b64_json;
+
+    _azState.deliverable_image = { mime:'image/png', data:imgData }; _azSave();
+    const el = document.getElementById('az-result-img');
+    el.src = 'data:image/png;base64,'+imgData;
+    document.getElementById('az-deliverable-image').style.display = 'block';
+    document.getElementById('az-deliverable').style.display = 'block';
+    document.getElementById('az-deliverable').scrollIntoView({ behavior:'smooth' });
+    status.innerHTML = '<span style="color:var(--green);">VISUAL READY</span>';
+    toast('Visual generated');
+  } catch(err) {
+    status.innerHTML = `<span style="color:var(--red);">Visual failed — ${err.message}</span>`;
+  } finally { btns.forEach(b=>b.disabled=false); }
+}
+
+function downloadTxt() {
+  const s = _azLoad();
+  if (!s.generated&&!s.parsed) { alert('Generate the prompt first.'); return; }
   const lines = [];
-  lines.push(s.title || 'OLC Inspo Analysis');
-  lines.push('The Old Line Company — ' + new Date().toLocaleDateString());
+  lines.push('OLC INSPO ANALYSIS');
+  lines.push(s.title||'Untitled');
+  lines.push('The Old Line Company — '+new Date().toLocaleDateString());
   lines.push('');
   lines.push('BREAKDOWN & DIRECTION');
   lines.push('====================');
   AZ_FIELDS.forEach(f => {
-    const node = (s.parsed || {})[f.key] || {};
-    lines.push('');
-    lines.push(f.label.toUpperCase());
-    lines.push('Observed: ' + (node.observed || '—'));
-    lines.push('Direction chosen: ' + (_resolveChoice(f) || '—'));
+    const node=(s.parsed||{})[f.key]||{};
+    lines.push(''); lines.push(f.label.toUpperCase());
+    lines.push('Observed: '+(node.observed||'—'));
+    lines.push('Direction: '+(_resolveChoice(f)||'—'));
   });
-  if (s.notes && s.notes.trim()) {
-    lines.push('');
-    lines.push('WORK PRODUCT NOTES');
-    lines.push('==================');
-    lines.push(s.notes.trim());
-  }
-  if (s.generated) {
-    lines.push('');
-    lines.push('BRIEF PROMPT (FOR EXECUTOR)');
-    lines.push('===========================');
-    lines.push(s.generated);
-  }
-  const text = lines.join('\n');
-  navigator.clipboard.writeText(text).then(() => toast('Copied to clipboard'));
+  if (s.notes) { lines.push(''); lines.push('WORK PRODUCT NOTES'); lines.push('=================='); lines.push(s.notes); }
+  if (s.generated) { lines.push(''); lines.push('BRIEF PROMPT'); lines.push('============'); lines.push(s.generated); }
+  if (s.deliverable_text) { lines.push(''); lines.push('GENERATED TREATMENT'); lines.push('==================='); lines.push(s.deliverable_text); }
+  const blob = new Blob([lines.join('\n')], { type:'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href=url; a.download=(s.title||'OLC_Analysis').replace(/[^A-Za-z0-9_-]+/g,'_')+'.txt';
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  toast('Downloaded');
+}
+
+function copyFormatted() {
+  const s = _azLoad();
+  const lines = [s.title||'OLC Inspo Analysis','The Old Line Company — '+new Date().toLocaleDateString(),'','BREAKDOWN & DIRECTION','===================='];
+  AZ_FIELDS.forEach(f => { const node=(s.parsed||{})[f.key]||{}; lines.push(''); lines.push(f.label.toUpperCase()); lines.push('Observed: '+(node.observed||'—')); lines.push('Direction: '+(_resolveChoice(f)||'—')); });
+  if (s.notes) { lines.push(''); lines.push('WORK PRODUCT NOTES'); lines.push(s.notes); }
+  if (s.generated) { lines.push(''); lines.push('BRIEF PROMPT'); lines.push(s.generated); }
+  if (s.deliverable_text) { lines.push(''); lines.push('TREATMENT'); lines.push(s.deliverable_text); }
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>toast('Copied to clipboard'));
 }
 
 function saveToInspoLog() {
   const s = _azLoad();
   if (!s.parsed) { alert('Nothing analyzed yet.'); return; }
-  const entry = {
-    id: uid(),
-    title: s.title || 'Inspo Analysis',
-    type: 'Analyzed',
-    link: '',
-    notes: AZ_FIELDS.map(f => `${f.label}: ${_resolveChoice(f) || (s.parsed[f.key]?.observed || '')}`).join(' | '),
-    tags: 'analyzer',
-    created: today()
-  };
-  const data = load(STORAGE_KEYS.inspo);
-  data.unshift(entry);
-  save(STORAGE_KEYS.inspo, data);
+  const entry = { id:uid(), title:s.title||'Inspo Analysis', type:'Analyzed', link:'', notes:AZ_FIELDS.map(f=>`${f.label}: ${_resolveChoice(f)||(s.parsed[f.key]?.observed||'')}`).join(' | '), tags:'analyzer', created:today() };
+  const data = load(STORAGE_KEYS.inspo); data.unshift(entry); save(STORAGE_KEYS.inspo, data);
   toast('Saved to Inspo Log');
 }
 
@@ -2483,305 +1416,199 @@ function sendAnalyzerToBrief() {
   const s = _azLoad();
   if (!s.parsed) { alert('Nothing analyzed yet.'); return; }
   showPanel('brief');
-  const setIf = (id, val) => { const el = document.getElementById(id); if (el && val) el.value = val; };
-  setIf('b-title', s.title);
-  setIf('b-inspo', _resolveChoice({ key: 'subject' }));
-  setIf('b-ref', _resolveChoice({ key: 'composition' }));
-  setIf('b-tech', [_resolveChoice({ key: 'method_to_achieve' }), _resolveChoice({ key: 'technical_specs' })].filter(Boolean).join('\n\n'));
-  setIf('b-thread', s.notes);
+  const setIf = (id,val) => { const el=document.getElementById(id); if(el&&val) el.value=val; };
+  setIf('b-title',s.title);
+  setIf('b-inspo',_resolveChoice({key:'subject'}));
+  setIf('b-ref',_resolveChoice({key:'composition'}));
+  setIf('b-tech',[_resolveChoice({key:'method_to_achieve'}),_resolveChoice({key:'technical_specs'})].filter(Boolean).join('\n\n'));
+  setIf('b-thread',s.notes);
   toast('Sent to Brief Builder');
 }
 
 function resetAnalyzer() {
-  if (!confirm('Clear the analyzer? Your work product notes will be lost.')) return;
-  _azState = { title: '', bias: '', notes: '', image_b64: '', mime: '', parsed: null, choices: {}, customs: {}, generated: '', refine: '', deliverable_image: null, deliverable_text: '', references: [] };
+  if (!confirm('Clear the analyzer?')) return;
+  _azState = { title:'',bias:'',notes:'',image_b64:'',mime:'',parsed:null,choices:{},customs:{},generated:'',refine:'',deliverable_image:null,deliverable_text:'',references:[] };
   _azSave();
-  document.getElementById('az-title').value = '';
-  document.getElementById('az-bias').value = '';
-  document.getElementById('az-notes').value = '';
-  const r = document.getElementById('az-refine'); if (r) r.value = '';
-  const p = document.getElementById('az-prompt-output'); if (p) p.value = '';
-  document.getElementById('az-preview').style.display = 'none';
-  document.getElementById('az-preview').src = '';
-  document.getElementById('az-dz-label').textContent = 'Drop reference image here';
-  document.getElementById('az-breakdown').style.display = 'none';
-  document.getElementById('az-prompt-output').style.display = 'none';
-  document.getElementById('az-prompt-hint').style.display = 'none';
-  document.getElementById('az-export-row').style.display = 'none';
-  document.getElementById('az-execute-section').style.display = 'none';
-  document.getElementById('az-deliverable').style.display = 'none';
-  document.getElementById('az-deliverable-image').style.display = 'none';
-  document.getElementById('az-deliverable-text').style.display = 'none';
-  document.getElementById('az-deliverable-text-actions').style.display = 'none';
-  document.getElementById('az-status').textContent = '';
-  document.getElementById('az-execute-status').textContent = '';
-  renderRefStrip();
-  toast('Reset');
+  document.getElementById('az-title').value=''; document.getElementById('az-bias').value=''; document.getElementById('az-notes').value='';
+  const r=document.getElementById('az-refine'); if(r) r.value='';
+  const p=document.getElementById('az-prompt-output'); if(p) p.value='';
+  document.getElementById('az-preview').style.display='none'; document.getElementById('az-preview').src='';
+  document.getElementById('az-dz-label').textContent='Drop reference image here';
+  document.getElementById('az-breakdown').style.display='none';
+  document.getElementById('az-prompt-output').style.display='none';
+  document.getElementById('az-prompt-hint').style.display='none';
+  document.getElementById('az-export-row').style.display='none';
+  document.getElementById('az-execute-section').style.display='none';
+  document.getElementById('az-deliverable').style.display='none';
+  document.getElementById('az-deliverable-image').style.display='none';
+  document.getElementById('az-deliverable-text').style.display='none';
+  document.getElementById('az-deliverable-text-actions').style.display='none';
+  document.getElementById('az-status').textContent=''; document.getElementById('az-execute-status').textContent='';
+  renderRefStrip(); toast('Reset');
 }
-
-// ─── EXECUTE ──────────────────────────────────────────────────────────────────
 
 const MAX_REFS = 4;
 
 function bindRefZone() {
-  const dz = document.getElementById('az-ref-zone');
-  const input = document.getElementById('az-ref-file');
-  if (!dz || dz._bound) return;
-  dz._bound = true;
-  ['dragenter', 'dragover'].forEach(ev => {
-    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.add('dragover'); });
-  });
-  ['dragleave', 'drop'].forEach(ev => {
-    dz.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('dragover'); });
-  });
-  dz.addEventListener('drop', (e) => {
-    const files = Array.from(e.dataTransfer?.files || []);
-    files.forEach(f => addReferenceFile(f));
-  });
-  input.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files || []);
-    files.forEach(f => addReferenceFile(f));
-    input.value = '';
-  });
+  const dz=document.getElementById('az-ref-zone'); const input=document.getElementById('az-ref-file');
+  if(!dz||dz._bound) return; dz._bound=true;
+  ['dragenter','dragover'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();dz.classList.add('dragover');}));
+  ['dragleave','drop'].forEach(ev=>dz.addEventListener(ev,e=>{e.preventDefault();e.stopPropagation();dz.classList.remove('dragover');}));
+  dz.addEventListener('drop',e=>{ Array.from(e.dataTransfer?.files||[]).forEach(f=>addReferenceFile(f)); });
+  input.addEventListener('change',e=>{ Array.from(e.target.files||[]).forEach(f=>addReferenceFile(f)); input.value=''; });
 }
 
 function bindClipboardPaste() {
-  if (window._azPasteBound) return;
-  window._azPasteBound = true;
-  document.addEventListener('paste', (e) => {
-    const panel = document.getElementById('panel-analyzer');
-    if (!panel || !panel.classList.contains('active')) return;
-    const items = e.clipboardData?.items || [];
-    let captured = 0;
-    for (const item of items) {
-      if (item.kind === 'file' && /^image\/(jpeg|png|webp)$/i.test(item.type)) {
-        const file = item.getAsFile();
-        if (file) { addReferenceFile(file); captured++; }
-      }
+  if (window._azPasteBound) return; window._azPasteBound=true;
+  document.addEventListener('paste',e=>{
+    const panel=document.getElementById('panel-analyzer');
+    if(!panel||!panel.classList.contains('active')) return;
+    let captured=0;
+    for(const item of (e.clipboardData?.items||[])) {
+      if(item.kind==='file'&&/^image\/(jpeg|png|webp)$/i.test(item.type)) { const f=item.getAsFile(); if(f){addReferenceFile(f);captured++;} }
     }
-    if (captured > 0) {
-      e.preventDefault();
-    }
+    if(captured>0) e.preventDefault();
   });
 }
 
 function addReferenceFile(file) {
-  if (!file || !/^image\/(jpeg|png|webp)$/i.test(file.type)) {
-    toast('Use JPG / PNG / WEBP only');
-    return;
-  }
-  const s = _azLoad();
-  if (s.references.length >= MAX_REFS) {
-    toast(`Max ${MAX_REFS} references — remove one first`);
-    return;
-  }
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    resizeToBase64(e.target.result, 1024, 0.85).then(({ b64, mime }) => {
-      _azState.references.push({ data: b64, mime_type: mime, id: uid() });
-      _azSave();
-      renderRefStrip();
-      toast('Reference added');
+  if(!file||!/^image\/(jpeg|png|webp)$/i.test(file.type)) { toast('Use JPG / PNG / WEBP only'); return; }
+  const s=_azLoad();
+  if(s.references.length>=MAX_REFS) { toast(`Max ${MAX_REFS} references — remove one first`); return; }
+  const reader=new FileReader();
+  reader.onload=e=>{
+    resizeToBase64(e.target.result,1024,0.85).then(({b64,mime})=>{
+      _azState.references.push({data:b64,mime_type:mime,id:uid()}); _azSave(); renderRefStrip(); toast('Reference added');
     });
   };
   reader.readAsDataURL(file);
 }
 
-function removeReference(id) {
-  _azState.references = _azState.references.filter(r => r.id !== id);
-  _azSave();
-  renderRefStrip();
-}
+function removeReference(id) { _azState.references=_azState.references.filter(r=>r.id!==id); _azSave(); renderRefStrip(); }
 
 function renderRefStrip() {
-  const strip = document.getElementById('az-ref-strip');
-  if (!strip) return;
-  const refs = (_azState && _azState.references) || [];
-  if (!refs.length) { strip.innerHTML = ''; return; }
-  strip.innerHTML = refs.map(r => `
-    <div class="ref-thumb" data-testid="analyzer-ref-thumb-${r.id}">
-      <img src="data:${r.mime_type};base64,${r.data}" alt="reference">
-      <button class="ref-thumb-remove" onclick="removeReference('${r.id}')" data-testid="analyzer-ref-remove-${r.id}" title="remove">×</button>
+  const strip=document.getElementById('az-ref-strip'); if(!strip) return;
+  const refs=(_azState&&_azState.references)||[];
+  if(!refs.length) { strip.innerHTML=''; return; }
+  strip.innerHTML=refs.map(r=>`<div class="ref-thumb"><img src="data:${r.mime_type};base64,${r.data}" alt="reference"><button class="ref-thumb-remove" onclick="removeReference('${r.id}')" title="remove">×</button></div>`).join('');
+}
+
+function downloadImage() {
+  const s=_azLoad(); if(!s.deliverable_image) return;
+  const url='data:'+s.deliverable_image.mime+';base64,'+s.deliverable_image.data;
+  const ext=(s.deliverable_image.mime||'image/png').split('/')[1]||'png';
+  const safeTitle=(s.title||'OLC_visual').replace(/[^A-Za-z0-9_-]+/g,'_').slice(0,60);
+  const a=document.createElement('a'); a.href=url; a.download=`${safeTitle}_${Date.now()}.${ext}`;
+  document.body.appendChild(a); a.click(); a.remove(); toast('Image downloaded');
+}
+
+function copyTreatment() {
+  const s=_azLoad(); if(!s.deliverable_text) return;
+  navigator.clipboard.writeText(s.deliverable_text).then(()=>toast('Treatment copied'));
+}
+
+// ─── TELEGRAM INBOX — polls Render webhook, loads entries into Analyzer ──────
+
+let _tgPollTimer = null;
+
+function getWebhook() {
+  return (localStorage.getItem('olc_webhook_url') || '').replace(/\/+$/, '');
+}
+
+async function fetchTelegramEntries() {
+  const url = getWebhook();
+  const statusEl = document.getElementById('tg-inbox-status');
+  const listEl = document.getElementById('tg-inbox-list');
+  if (!listEl) return;
+  if (!url) {
+    if (statusEl) statusEl.textContent = 'NO WEBHOOK SET';
+    listEl.innerHTML = `<div class="tg-empty">NOT CONFIGURED — OPEN ⚙ KEYS TO ADD YOUR RENDER WEBHOOK URL</div>`;
+    return;
+  }
+  if (statusEl) statusEl.textContent = 'POLLING…';
+  try {
+    const res = await fetch(url + '/entries');
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const entries = await res.json();
+    renderTelegramInbox(entries);
+    const n = (entries || []).length;
+    if (statusEl) statusEl.textContent = `CONNECTED · ${n} ENTR${n === 1 ? 'Y' : 'IES'} · ${new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}`;
+  } catch (e) {
+    if (statusEl) statusEl.innerHTML = `<span style="color:var(--gold-dim);">WAKING UP… RETRY IN 30S</span>`;
+  }
+}
+
+function renderTelegramInbox(entries) {
+  const list = document.getElementById('tg-inbox-list');
+  if (!list) return;
+  if (!entries || !entries.length) {
+    list.innerHTML = `<div class="tg-empty">NO ENTRIES YET — TEXT YOUR BOT TO GET STARTED</div>`;
+    return;
+  }
+  list.innerHTML = entries.slice(0, 20).map(e => `
+    <div class="tg-entry" onclick="loadTelegramEntry('${_esc(e.id)}')" data-testid="tg-entry-${_esc(e.id)}">
+      <div class="tg-entry-created">${_esc(e.created || '')}</div>
+      <div class="tg-entry-raw">${_esc((e.raw || '').slice(0, 160))}</div>
+      ${e.hook ? `<div class="tg-entry-hook">${_esc(e.hook.slice(0, 120))}</div>` : ''}
+      <div class="tg-entry-tap">TAP TO LOAD →</div>
     </div>
   `).join('');
 }
 
-const TREATMENT_SYSTEM = (
-  "You are a senior creative director for The Old Line Company. You receive a "
-  + "structural directive (mechanics only) and you produce a polished, original creative "
-  + "treatment / script / copy / shot list as the deliverable. You operate under a strict rule: "
-  + "describe everything in original, mechanical, structural language. Do not name any "
-  + "designer, photographer, director, illustrator, studio, firm, brand, franchise, "
-  + "school, movement, decade, era, or country-of-origin. The directive describes HOW, never WHO. "
-  + "Your treatment must be entirely original. If reference images are attached, treat them as "
-  + "visual fidelity targets — describe the structural mechanics they exhibit and use those mechanics "
-  + "as additional constraints in your treatment. Never name what or whom the references depict."
-);
-
-async function _claudeDescribeRefs(refs) {
-  // Use Claude vision to translate any reference images into structural-mechanics text.
-  // Returns a single block of text. If no refs, returns empty string. If the call fails,
-  // returns empty string (we don't want a vision-side hiccup to block the main call).
-  if (!refs || !refs.length) return '';
-  const blocks = [];
-  for (const r of refs) {
-    try {
-      const desc = await callAnthropic({
-        system: 'You translate reference images into pure structural mechanics — composition, ratios, color values, technique steps. Never name designers, brands, movements, eras. Output 4-6 lines, dense and specific.',
-        prompt: 'Describe the mechanics of this reference in structural terms only. No attribution, no proper nouns.',
-        imageBase64: r.data,
-        imageMime: r.mime_type || 'image/jpeg',
-        maxTokens: 600
-      });
-      if (desc && desc.trim()) blocks.push('- ' + desc.trim().replace(/\n+/g, '\n  '));
-    } catch (e) {
-      console.warn('Reference description failed:', e);
-    }
+async function loadTelegramEntry(id) {
+  const url = getWebhook();
+  if (!url) return;
+  _azLoad();
+  if (_azState.parsed || _azState.generated || _azState.deliverable_image) {
+    if (!confirm('Load Telegram entry? Current analyzer state will be replaced.')) return;
   }
-  if (!blocks.length) return '';
-  return '\n\n## REFERENCE MECHANICS (translated from attached images)\n' + blocks.join('\n');
-}
-
-async function executeVisual() {
-  const s = _azLoad();
-  const promptEl = document.getElementById('az-prompt-output');
-  const currentPrompt = (promptEl && promptEl.value) || s.generated;
-  if (!currentPrompt || !currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
-  if (!getKey('openai')) { alert('OpenAI key not set — open ⚙ Keys and paste your sk-... key'); return; }
-  const status = document.getElementById('az-execute-status');
-  const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
-  btns.forEach(b => b.disabled = true);
-  status.innerHTML = '<span style="color:var(--gold);">RENDERING — this can take 15-40s</span>';
   try {
-    const refs = s.references || [];
-    let refBlock = '';
-    if (refs.length) {
-      status.innerHTML = '<span style="color:var(--gold);">READING REFERENCES (Claude vision)…</span>';
-      refBlock = await _claudeDescribeRefs(refs);
-      status.innerHTML = '<span style="color:var(--gold);">RENDERING via OpenAI image gen…</span>';
-    }
-    const refineBlock = (s.refine && s.refine.trim()) ? ('\n\n## ITERATION NOTE\n' + s.refine.trim()) : '';
-    const fullPrompt = (currentPrompt + refineBlock + refBlock).slice(0, 32000);
-
-    const img = await callOpenAIImage({ prompt: fullPrompt, size: '1024x1024' });
-    _azState.deliverable_image = { mime: img.mime_type, data: img.data };
+    const res = await fetch(url + '/entries/' + encodeURIComponent(id));
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const entry = await res.json();
+    _azState = {
+      title: (entry.raw || 'Telegram import').slice(0, 80),
+      bias: entry.raw || '',
+      notes: [entry.hook ? 'HOOK:\n' + entry.hook : '', entry.brief ? 'BRIEF:\n' + entry.brief : ''].filter(Boolean).join('\n\n'),
+      image_b64: '',
+      mime: '',
+      parsed: null,
+      choices: {},
+      customs: {},
+      generated: entry.directive || '',
+      refine: '',
+      deliverable_image: entry.image_b64 ? { mime: entry.image_mime || 'image/png', data: entry.image_b64 } : null,
+      deliverable_text: '',
+      references: []
+    };
     _azSave();
-    const el = document.getElementById('az-result-img');
-    el.src = 'data:' + img.mime_type + ';base64,' + img.data;
-    document.getElementById('az-deliverable-image').style.display = 'block';
-    document.getElementById('az-deliverable').style.display = 'block';
-    document.getElementById('az-deliverable').scrollIntoView({ behavior: 'smooth' });
-    status.innerHTML = '<span style="color:var(--green);">VISUAL READY</span>';
-    toast('Visual generated');
-  } catch (err) {
-    status.innerHTML = `<span style="color:var(--red);">Visual failed — ${err.message}</span>`;
-  } finally {
-    btns.forEach(b => b.disabled = false);
+    showPanel('analyzer');
+    initAnalyzer();
+    toast('Loaded from Telegram');
+  } catch (e) {
+    alert('Load failed: ' + e.message);
   }
 }
 
-async function executeTreatment() {
-  const s = _azLoad();
-  const promptEl = document.getElementById('az-prompt-output');
-  const currentPrompt = (promptEl && promptEl.value) || s.generated;
-  if (!currentPrompt || !currentPrompt.trim()) { alert('Generate the brief prompt first.'); return; }
-  if (!getKey('anthropic')) { alert('Anthropic key not set — open ⚙ Keys and paste your sk-ant-... key'); return; }
-  const status = document.getElementById('az-execute-status');
-  const btns = document.querySelectorAll('[data-testid^="analyzer-execute-"]');
-  btns.forEach(b => b.disabled = true);
-  status.innerHTML = '<span style="color:var(--gold);">DRAFTING TREATMENT —</span>';
-  try {
-    const refs = s.references || [];
-    const refineBlock = (s.refine && s.refine.trim()) ? ('\n\n## ITERATION NOTE\n' + s.refine.trim()) : '';
-    let refsBlock = '';
-    if (refs.length) {
-      refsBlock = '\n\n## REFERENCE IMAGES ATTACHED\nThe attached image(s) are visual fidelity targets. Read their structural mechanics and fold them into the treatment as additional constraints. Do not name what is depicted.';
-    }
-    const taskBlock = '\n\n## YOUR TASK\nProduce the deliverable that fulfills the directive above. Format appropriately for the implied medium (poster spec, video shot list, copy block, script, etc.). Use clear section headers. Disclose your specific choices for under-defined elements and the mechanical reasoning behind them. Do not name any creator, firm, era, or prior work.';
-    const fullPrompt = currentPrompt + refineBlock + refsBlock + taskBlock;
-
-    let text;
-    if (refs.length === 0) {
-      text = await callAnthropic({ system: TREATMENT_SYSTEM, prompt: fullPrompt, maxTokens: 4000 });
-    } else {
-      // Claude supports multiple images in a single message via the user content array.
-      const key = getKey('anthropic');
-      const userContent = refs.map(r => ({
-        type: 'image',
-        source: { type: 'base64', media_type: r.mime_type || 'image/jpeg', data: r.data }
-      }));
-      userContent.push({ type: 'text', text: fullPrompt });
-      const res = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-          'x-api-key': key,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
-          'content-type': 'application/json'
-        },
-        body: JSON.stringify({
-          model: ANTHROPIC_MODEL,
-          max_tokens: 4000,
-          system: TREATMENT_SYSTEM,
-          messages: [{ role: 'user', content: userContent }]
-        })
-      });
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`Anthropic ${res.status}: ${body.slice(0, 300)}`);
-      }
-      const data = await res.json();
-      text = (data.content || []).filter(b => b.type === 'text').map(b => b.text).join('\n');
-    }
-    _azState.deliverable_text = text || '';
-    _azSave();
-    const t = document.getElementById('az-deliverable-text');
-    t.textContent = _azState.deliverable_text;
-    t.style.display = 'block';
-    document.getElementById('az-deliverable-text-actions').style.display = 'flex';
-    document.getElementById('az-deliverable').style.display = 'block';
-    document.getElementById('az-deliverable').scrollIntoView({ behavior: 'smooth' });
-    status.innerHTML = '<span style="color:var(--green);">TREATMENT READY</span>';
-    toast('Treatment generated');
-  } catch (err) {
-    status.innerHTML = `<span style="color:var(--red);">Treatment failed — ${err.message}</span>`;
-  } finally {
-    btns.forEach(b => b.disabled = false);
+function startTelegramPolling() {
+  if (_tgPollTimer) clearInterval(_tgPollTimer);
+  _tgPollTimer = null;
+  fetchTelegramEntries();
+  if (getWebhook()) {
+    _tgPollTimer = setInterval(fetchTelegramEntries, 30000);
   }
 }
 
-function downloadImage() {
-  const s = _azLoad();
-  if (!s.deliverable_image) return;
-  const url = 'data:' + s.deliverable_image.mime + ';base64,' + s.deliverable_image.data;
-  const ext = (s.deliverable_image.mime || 'image/png').split('/')[1] || 'png';
-  const safeTitle = (s.title || 'OLC_visual').replace(/[^A-Za-z0-9_-]+/g, '_').slice(0, 60);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `${safeTitle}_${Date.now()}.${ext}`;
-  document.body.appendChild(a); a.click(); a.remove();
-  toast('Image downloaded');
-}
+// ─── MODAL CLOSE ──────────────────────────────────────────────────────────────
 
-function copyTreatment() {
-  const s = _azLoad();
-  if (!s.deliverable_text) return;
-  navigator.clipboard.writeText(s.deliverable_text).then(() => toast('Treatment copied'));
-}
-
-// ─── CLOSE MODAL ON OVERLAY CLICK ─────────────────────────────────────────────
-
-document.getElementById('asset-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeModal();
-});
-
-document.getElementById('keys-modal').addEventListener('click', function(e) {
-  if (e.target === this) closeKeysModal();
-});
+document.getElementById('asset-modal').addEventListener('click', function(e) { if(e.target===this) closeModal(); });
+document.getElementById('settings-modal').addEventListener('click', function(e) { if(e.target===this) document.getElementById('settings-modal').classList.remove('open'); });
 
 // ─── INIT ─────────────────────────────────────────────────────────────────────
 
 renderPipeline();
+// Kick Telegram polling on page load if webhook configured
+startTelegramPolling();
 </script>
 </body>
 </html>
