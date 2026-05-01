@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<meta name="olc-build" content="2026-05-01-v5-telegram">
+<meta name="olc-build" content="2026-05-01-v5.2-parse-fix">
 <title>OLC — The Old Line Company</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Playfair+Display:ital,wght@0,700;1,400&display=swap" rel="stylesheet">
 <style>
@@ -727,7 +727,7 @@ async function anthropicCall({ system, userContent, maxTokens = 1000 }) {
       'anthropic-dangerous-direct-browser-access': 'true'
     },
     body: JSON.stringify({
-      model: 'claude-sonnet-4-20250514',
+      model: 'claude-sonnet-4-5-20250929',
       max_tokens: maxTokens,
       system: composedSystem,
       messages: [{ role: 'user', content: userContent }]
@@ -1181,12 +1181,12 @@ async function runImageAnalysis() {
       method: 'POST',
       headers: { 'Content-Type':'application/json', 'x-api-key':key, 'anthropic-version':'2023-06-01', 'anthropic-dangerous-direct-browser-access':'true' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1500,
+        model: 'claude-sonnet-4-5-20250929',
+        max_tokens: 2000,
         system: composedSystem,
         messages: [{ role:'user', content: [
           { type:'image', source:{ type:'base64', media_type:s.mime||'image/jpeg', data:s.image_b64 } },
-          { type:'text', text:`Analyze this image. Return a JSON object with exactly these keys: subject, method, composition, structural_principles, method_to_achieve, technical_specs.\n\nEach key maps to an object with:\n- "observed": what you directly see\n- "philosophy": the underlying principle (1-2 sentences)\n- "options": array of 2 alternative creative directions\n\nPrecise and production-actionable.${s.bias ? '\n\nCreator bias: '+s.bias : ''}\n\nReturn ONLY the JSON object.` }
+          { type:'text', text:`Analyze this image. Return a JSON object with exactly these keys: subject, method, composition, structural_principles, method_to_achieve, technical_specs.\n\nEach key maps to an object with:\n- "observed": what you directly see\n- "philosophy": the underlying principle (1-2 sentences)\n- "options": array of 2 alternative creative directions\n\nPrecise and production-actionable.${s.bias ? '\n\nCreator bias: '+s.bias : ''}\n\nReturn ONLY the JSON object — start with { and end with }. No preamble, no explanation, no markdown.` }
         ]}]
       })
     });
@@ -1194,8 +1194,21 @@ async function runImageAnalysis() {
     const apiData = await res.json();
     const rawText = apiData.content.filter(b=>b.type==='text').map(b=>b.text).join('');
     let parsed;
-    try { parsed = JSON.parse(rawText.replace(/```json|```/g,'').trim()); }
-    catch(e) { status.innerHTML = '<span style="color:var(--red);">Could not parse response. Check console.</span>'; console.warn('Raw:', rawText); return; }
+    try {
+      // Robust extraction: strip code fences, find first { to last } substring
+      const cleaned = rawText.replace(/```json|```/g, '').trim();
+      const firstBrace = cleaned.indexOf('{');
+      const lastBrace = cleaned.lastIndexOf('}');
+      if (firstBrace === -1 || lastBrace === -1 || lastBrace <= firstBrace) {
+        throw new Error('No JSON object found in response');
+      }
+      parsed = JSON.parse(cleaned.slice(firstBrace, lastBrace + 1));
+    }
+    catch(e) {
+      console.warn('Raw response from Claude:', rawText);
+      status.innerHTML = `<span style="color:var(--red);">Parse failed: ${_esc(e.message.slice(0,120))}</span><br><span style="color:var(--muted);font-size:10px;display:block;margin-top:6px;max-height:140px;overflow-y:auto;line-height:1.5;white-space:pre-wrap;">RAW (first 600 chars):\n${_esc((rawText||'(empty)').slice(0,600))}</span>`;
+      return;
+    }
     _azState.parsed = parsed; _azState.choices = {}; _azState.customs = {}; _azSave();
     renderBreakdown(parsed);
     document.getElementById('az-breakdown').style.display = 'block';
@@ -1303,7 +1316,7 @@ async function executeTreatment() {
     const res = await fetch('https://api.anthropic.com/v1/messages', {
       method:'POST',
       headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
-      body:JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:2000, system:composedSystem, messages:[{role:'user',content:userContent}] })
+      body:JSON.stringify({ model:'claude-sonnet-4-5-20250929', max_tokens:2000, system:composedSystem, messages:[{role:'user',content:userContent}] })
     });
     if (!res.ok) { const t=await res.text(); throw new Error(`API ${res.status}: ${t.slice(0,200)}`); }
     const apiData = await res.json();
